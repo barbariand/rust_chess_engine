@@ -1,21 +1,15 @@
 use std::{ops::Add, str::FromStr};
 
 use super::{File, MoveOffset, Rank};
-#[derive(Clone)]
+#[derive(Debug,Clone,Copy,PartialEq)]
 pub struct BoardPosition {
     pub file: File,
     pub rank: Rank,
 }
 
 impl BoardPosition {
-    fn new(file: File, rank: Rank) -> Self {
+    pub fn new(file: File, rank: Rank) -> Self {
         BoardPosition { file, rank }
-    }
-    fn move_to_file(&mut self, file: File) {
-        self.file = file;
-    }
-    fn move_to_rank(&mut self, rank: Rank) {
-        self.rank = rank;
     }
 }
 impl Add<MoveOffset> for BoardPosition {

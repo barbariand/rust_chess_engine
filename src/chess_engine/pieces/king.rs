@@ -1,7 +1,7 @@
 use crate::chess_engine::board::MoveOffset;
 
-use super::{Action, BoardPosition, MovementOptions, PieceMovement};
-static potential_moves: [(i8, i8); 8] = [
+use super::{BoardPosition, MovementOptions, PieceMovement, Action};
+static POTENTIAL_MOVES: [(i8, i8); 8] = [
     (-1, -1), // Top-left
     (-1, 0),  // Top
     (-1, 1),  // Top-right
@@ -16,14 +16,14 @@ pub struct King;
 impl PieceMovement for King {
     fn get_movement_options(
         pos: BoardPosition,
-        board: crate::chess_engine::board::Board,
-        color: &super::Color,
+        board: &crate::chess_engine::board::Board,
+        _: &super::Color,
     ) -> MovementOptions
     where
         Self: Sized,
     {
         MovementOptions(
-            potential_moves
+            POTENTIAL_MOVES.into_iter()
                 .map(|v| (&pos + MoveOffset::from(v)).ok())
                 .map(|v| {
                     v.map(|pos| match board.has_piece(&pos) {

@@ -1,3 +1,8 @@
+use chess_engine::board::Board;
+
 mod chess_engine;
 
-fn main() {}
+fn main() {
+    let board=Board::new();
+    println!("{}",board)
+}
