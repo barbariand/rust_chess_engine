@@ -2,7 +2,7 @@ use crate::chess_engine::board::MoveOffset;
 
 use super::{Action, BoardPosition, MovementOptions, PieceMovement};
 static POTENTIAL_MOVES: [(i8, i8); 8] = [
-    (-1, 3), 
+    (-1, 3),
     (1, -3),
     (1, 3),
     (-1, -3),
@@ -23,17 +23,18 @@ impl PieceMovement for Knight {
         Self: Sized,
     {
         MovementOptions {
-            0: POTENTIAL_MOVES.into_iter()
-            .map(|v| (&pos + MoveOffset::from(v)).ok())
-            .map(|v| {
-                v.map(|pos| match board.has_piece(&pos) {
-                    true => Action::Take(pos),
-                    false => Action::MoveTo(pos),
+            0: POTENTIAL_MOVES
+                .into_iter()
+                .map(|v| (&pos + MoveOffset::from(v)).ok())
+                .map(|v| {
+                    v.map(|pos| match board.has_piece(&pos) {
+                        true => Action::Take(pos),
+                        false => Action::MoveTo(pos),
+                    })
                 })
-            })
-            .into_iter()
-            .flatten()
-            .collect(),
+                .into_iter()
+                .flatten()
+                .collect(),
         }
     }
 }

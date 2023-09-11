@@ -1,6 +1,6 @@
 use crate::chess_engine::board::MoveOffset;
 
-use super::{BoardPosition, MovementOptions, PieceMovement, Action};
+use super::{Action, BoardPosition, MovementOptions, PieceMovement};
 static POTENTIAL_MOVES: [(i8, i8); 8] = [
     (-1, -1), // Top-left
     (-1, 0),  // Top
@@ -23,7 +23,8 @@ impl PieceMovement for King {
         Self: Sized,
     {
         MovementOptions(
-            POTENTIAL_MOVES.into_iter()
+            POTENTIAL_MOVES
+                .into_iter()
                 .map(|v| (&pos + MoveOffset::from(v)).ok())
                 .map(|v| {
                     v.map(|pos| match board.has_piece(&pos) {

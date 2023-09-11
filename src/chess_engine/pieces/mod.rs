@@ -17,22 +17,22 @@ pub enum Action {
     MoveTo(BoardPosition),
 }
 pub struct MovementOptions(Vec<Action>);
-pub trait PieceMovement:Debug{
+pub trait PieceMovement: Debug {
     fn get_movement_options(pos: BoardPosition, board: &Board, color: &Color) -> MovementOptions;
 }
-#[derive(Debug, Clone, PartialEq,Copy)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum Color {
     Black,
     White,
 }
-#[derive(Debug, Clone, PartialEq,Copy)]
-pub struct Piece{
+#[derive(Debug, Clone, PartialEq, Copy)]
+pub struct Piece {
     pub color: Color,
-    pub pos:Option<BoardPosition>,
+    pub pos: Option<BoardPosition>,
     type_of_pice: InnerPiece,
 }
-#[derive(Debug, Clone, PartialEq,Copy)]
-enum InnerPiece{
+#[derive(Debug, Clone, PartialEq, Copy)]
+enum InnerPiece {
     Bishop,
     King,
     Knight,
@@ -41,47 +41,47 @@ enum InnerPiece{
     Rook,
 }
 
-impl Piece{
-    pub fn new_pawn(color:Color)->Piece{
-        Piece{
+impl Piece {
+    pub fn new_pawn(color: Color) -> Piece {
+        Piece {
             color,
-            pos:None,
-            type_of_pice:InnerPiece::Pawn
+            pos: None,
+            type_of_pice: InnerPiece::Pawn,
         }
     }
-    pub fn new_knight(color:Color)->Piece{
-        Piece{
+    pub fn new_knight(color: Color) -> Piece {
+        Piece {
             color,
-            pos:None,
-            type_of_pice:InnerPiece::Knight
+            pos: None,
+            type_of_pice: InnerPiece::Knight,
         }
     }
-    pub fn new_king(color:Color)->Piece{
-        Piece{
+    pub fn new_king(color: Color) -> Piece {
+        Piece {
             color,
-            pos:None,
-            type_of_pice:InnerPiece::King
+            pos: None,
+            type_of_pice: InnerPiece::King,
         }
     }
-    pub fn new_queen(color:Color)->Piece{
-        Piece{
+    pub fn new_queen(color: Color) -> Piece {
+        Piece {
             color,
-            pos:None,
-            type_of_pice:InnerPiece::Queen
+            pos: None,
+            type_of_pice: InnerPiece::Queen,
         }
     }
-    pub fn new_bishop(color:Color)->Piece{
-        Piece{
+    pub fn new_bishop(color: Color) -> Piece {
+        Piece {
             color,
-            pos:None,
-            type_of_pice:InnerPiece::Bishop
+            pos: None,
+            type_of_pice: InnerPiece::Bishop,
         }
     }
-    pub fn new_rook(color:Color)->Piece{
-        Piece{
+    pub fn new_rook(color: Color) -> Piece {
+        Piece {
             color,
-            pos:None,
-            type_of_pice:InnerPiece::Rook
+            pos: None,
+            type_of_pice: InnerPiece::Rook,
         }
     }
 }
@@ -90,8 +90,7 @@ impl Piece {
     where
         Self: Sized,
     {
-        self.pos.map(|pos|
-        match self.type_of_pice{
+        self.pos.map(|pos| match self.type_of_pice {
             InnerPiece::Bishop => Bishop::get_movement_options(pos, board, &self.color),
             InnerPiece::King => King::get_movement_options(pos, board, &self.color),
             InnerPiece::Knight => Knight::get_movement_options(pos, board, &self.color),
@@ -119,7 +118,7 @@ impl<'a> BoardWalker<'a> {
     }
 }
 impl<'a> Iterator for BoardWalker<'a> {
-    type Item = BoardPosition;
+    type Item = Action;
     fn next(&mut self) -> Option<Self::Item> {
         if self.end {
             return None;
@@ -127,18 +126,21 @@ impl<'a> Iterator for BoardWalker<'a> {
         let new_pos = (self.pos.clone() + self.changer).ok()?;
         self.end = self.board.has_piece(&new_pos);
         self.pos = new_pos.clone();
-        Some(new_pos)
+        Some(match self.end {
+            true => Action::Take(new_pos),
+            false => Action::MoveTo(new_pos),
+        })
     }
 }
-impl Display for Piece{
+impl Display for Piece {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self.type_of_pice{
-            InnerPiece::Bishop => write!(f," B "),
-            InnerPiece::King => write!(f," K "),
-            InnerPiece::Knight => write!(f," Kn"),
-            InnerPiece::Pawn => write!(f," p "),
-            InnerPiece::Queen => write!(f," Q "),
-            InnerPiece::Rook => write!(f," R "),
+        match self.type_of_pice {
+            InnerPiece::Bishop => write!(f, " B "),
+            InnerPiece::King => write!(f, " K "),
+            InnerPiece::Knight => write!(f, " Kn"),
+            InnerPiece::Pawn => write!(f, " p "),
+            InnerPiece::Queen => write!(f, " Q "),
+            InnerPiece::Rook => write!(f, " R "),
         }
     }
 }
