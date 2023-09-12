@@ -21,13 +21,8 @@ impl PieceMovement for Rook {
         MovementOptions {
             0: POTENTIAL_MOVES
                 .iter()
-                .map(|v| BoardWalker::new(&pos, &board, MoveOffset(v.0, v.1)))
-                .map(|walker| walker.collect::<Vec<Action>>())
-                .reduce(|v, mut acc| {
-                    acc.extend(v);
-                    acc
-                })
-                .expect("iterator cant be zero beacuse we start it with 4"),
+                .map(|v| BoardWalker::new(&pos, &board, MoveOffset(v.0, v.1),super::InnerPiece::Rook))
+                .flatten().collect()
         }
     }
 }

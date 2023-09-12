@@ -7,6 +7,7 @@ use crate::chess_engine::pieces::Piece;
 use std::fmt::Display;
 use std::ops::Index;
 use std::ops::IndexMut;
+
 #[derive(Debug, Clone)]
 pub struct BoardRank([Option<Piece>; 8]);
 #[derive(Debug, Clone)]
@@ -58,7 +59,7 @@ impl Board {
         self.move_to(from, to_pos)
     }
     pub fn move_to(&mut self, from: BoardPosition, to: BoardPosition) -> Result<(), String> {
-        let piece=self[from.rank][from.file]
+        let piece = self[from.rank][from.file]
             .ok_or(String::from("There is no piece on that place"))
             .and_then(|a| {
                 (a.color == self.turn)
@@ -94,14 +95,14 @@ impl Index<&File> for BoardRank {
     fn index(&self, index: &File) -> &Self::Output {
         self.0
             .get(<&File as Into<i8>>::into(index) as usize)
-            .expect("Rank is bigger than board")
+            .expect("File is bigger than board")
     }
 }
 impl IndexMut<File> for BoardRank {
     fn index_mut(&mut self, index: File) -> &mut Self::Output {
         self.0
             .get_mut(<File as Into<i8>>::into(index) as usize)
-            .expect("Rank is bigger than board")
+            .expect("File is bigger than board")
     }
 }
 impl Index<Rank> for Board {
@@ -117,7 +118,7 @@ impl Index<File> for BoardRank {
     fn index(&self, index: File) -> &Self::Output {
         self.0
             .get(<File as Into<i8>>::into(index) as usize)
-            .expect("Rank is bigger than board")
+            .expect("File is bigger than board")
     }
 }
 impl Index<&BoardPosition> for Board {
@@ -143,6 +144,7 @@ impl Display for BoardRank {
                 None => write!(f, "{:>3}|", " ")?,
             }
         }
+
         Ok(())
     }
 }

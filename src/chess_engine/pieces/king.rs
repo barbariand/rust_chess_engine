@@ -26,15 +26,12 @@ impl PieceMovement for King {
             POTENTIAL_MOVES
                 .into_iter()
                 .map(|v| (&pos + MoveOffset::from(v)).ok())
-                .map(|v| {
+                .flat_map(|v| {
                     v.map(|pos| match board.has_piece(&pos) {
                         true => Action::Take(pos),
                         false => Action::MoveTo(pos),
                     })
-                })
-                .into_iter()
-                .flatten()
-                .collect(),
+                }).collect()
         )
     }
 }

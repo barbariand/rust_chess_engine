@@ -102,14 +102,16 @@ impl Piece {
 }
 
 pub(super) struct BoardWalker<'a> {
+    type_of_piece:InnerPiece,
     pos: BoardPosition,
     board: &'a Board,
     changer: MoveOffset,
     end: bool,
 }
 impl<'a> BoardWalker<'a> {
-    fn new(pos: &BoardPosition, board: &'a Board, changer: MoveOffset) -> BoardWalker<'a> {
+    fn new(pos: &BoardPosition, board: &'a Board, changer: MoveOffset,type_of_piece:InnerPiece) -> BoardWalker<'a> {
         BoardWalker {
+            type_of_piece,
             pos: pos.clone(),
             board,
             changer,
