@@ -1,6 +1,6 @@
 use crate::chess_engine::board::MoveOffset;
 
-use super::{Action, BoardPosition, BoardWalker, MovementOptions, PieceMovement};
+use super::{BoardPosition, BoardWalker, MovementOptions, PieceMovement, Piece};
 static POTENTIAL_MOVES: [(i8, i8); 8] = [
     (-1, -1), // Top-left
     (-1, 0),  // Top
@@ -15,6 +15,7 @@ static POTENTIAL_MOVES: [(i8, i8); 8] = [
 pub struct Queen;
 impl PieceMovement for Queen {
     fn get_movement_options(
+        piece:&Piece,
         pos: BoardPosition,
         board: &crate::chess_engine::board::Board,
         _: &super::Color,
@@ -25,7 +26,7 @@ impl PieceMovement for Queen {
         MovementOptions {
             0: POTENTIAL_MOVES
                 .iter()
-                .map(|v| BoardWalker::new(&pos, &board, MoveOffset(v.0, v.1),super::InnerPiece::Queen))
+                .map(|v| BoardWalker::new(&pos, &board, MoveOffset(v.0, v.1),piece))
                 .flatten().collect()
         }
     }

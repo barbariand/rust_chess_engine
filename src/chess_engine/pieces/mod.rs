@@ -1,5 +1,5 @@
-use super::board::{Board, BoardPosition, MoveOffset};
-use std::fmt::{Debug, Display};
+use super::{board::{Board, BoardPosition, MoveOffset, self}, errors::{Error, ActionError}};
+use std::{fmt::{Debug, Display}, ops::Deref};
 mod bishop;
 mod king;
 mod knight;
@@ -12,13 +12,64 @@ pub use knight::Knight;
 pub use pawn::Pawn;
 pub use queen::Queen;
 pub use rook::Rook;
-pub enum Action {
-    Take(BoardPosition),
-    MoveTo(BoardPosition),
+
+#[derive(Debug,Clone)]
+pub struct Action{
+    pub piece_pos:BoardPosition,
+    inner_action:InnerAction,
+    to_pos:BoardPosition,
+}
+impl Action{
+    pub fn new(piece:& Piece,board:&Board,pos:BoardPosition)->Result<Self,Error>{
+        let piece_pos=piece.pos.ok_or(ActionError::PieceNotInPlay)?.clone();
+        match (board.has_piece(&pos),board.is_piece_color(&pos,piece.color)){
+            (true,true)=>{
+                Err(ActionError::SameColor.into())
+            }
+            (true,false)=>{
+                Ok(Action { inner_action: InnerAction::Take,piece_pos,to_pos:pos})
+            }
+            (false,_)=>{
+                Ok(Action { inner_action: InnerAction::MoveTo ,piece_pos,to_pos:pos})
+            }
+        }
+    }
+    pub fn execute(&self, board:&mut Board){
+        match self.inner_action{
+            InnerAction::MoveTo=>{
+                let mut moved=board[&self.piece_pos].take().expect("Unreatcheble beacuse allready checked why hacking");
+                moved.pos=Some(self.piece_pos);
+                board[&self.to_pos]=Some(moved)
+            }
+            InnerAction::Take=>{
+                let mut piece=board[&self.to_pos].take().expect("Unreatcheble beacuse allready checked why hacking");
+                piece.pos=None;
+                let mut moved=board[&self.piece_pos].take().expect("Unreatcheble beacuse allready checked why hacking");
+                moved.pos=Some(self.piece_pos);
+                board[&self.to_pos]=Some(moved)
+            }
+        }
+    }
+}
+#[derive(Debug,Clone)]
+enum InnerAction {
+    Take,
+    MoveTo,
 }
 pub struct MovementOptions(Vec<Action>);
-pub trait PieceMovement: Debug {
-    fn get_movement_options(pos: BoardPosition, board: &Board, color: &Color) -> MovementOptions;
+impl Deref for MovementOptions{
+    type Target = Vec<Action>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+trait PieceMovement {
+    fn get_movement_options(
+        piece:&Piece,
+        pos: BoardPosition,
+        board: &crate::chess_engine::board::Board,
+        color: &Color,
+    ) -> MovementOptions;
 }
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub enum Color {
@@ -91,47 +142,38 @@ impl Piece {
         Self: Sized,
     {
         self.pos.map(|pos| match self.type_of_pice {
-            InnerPiece::Bishop => Bishop::get_movement_options(pos, board, &self.color),
-            InnerPiece::King => King::get_movement_options(pos, board, &self.color),
-            InnerPiece::Knight => Knight::get_movement_options(pos, board, &self.color),
-            InnerPiece::Pawn => Pawn::get_movement_options(pos, board, &self.color),
-            InnerPiece::Queen => Queen::get_movement_options(pos, board, &self.color),
-            InnerPiece::Rook => Rook::get_movement_options(pos, board, &self.color),
+            InnerPiece::Bishop => Bishop::get_movement_options(self,pos, board, &self.color),
+            InnerPiece::King => King::get_movement_options(self,pos, board, &self.color),
+            InnerPiece::Knight => Knight::get_movement_options(self,pos, board, &self.color),
+            InnerPiece::Pawn => Pawn::get_movement_options(self,pos, board, &self.color),
+            InnerPiece::Queen => Queen::get_movement_options(self,pos, board, &self.color),
+            InnerPiece::Rook => Rook::get_movement_options(self,pos, board, &self.color),
         })
     }
 }
 
 pub(super) struct BoardWalker<'a> {
-    type_of_piece:InnerPiece,
+    piece:&'a Piece,
     pos: BoardPosition,
     board: &'a Board,
     changer: MoveOffset,
-    end: bool,
 }
 impl<'a> BoardWalker<'a> {
-    fn new(pos: &BoardPosition, board: &'a Board, changer: MoveOffset,type_of_piece:InnerPiece) -> BoardWalker<'a> {
+    fn new(pos: &BoardPosition, board: &'a Board, changer: MoveOffset,piece:&'a Piece) -> BoardWalker<'a> {
         BoardWalker {
-            type_of_piece,
-            pos: pos.clone(),
+            piece,
+            pos:pos.clone(),
             board,
             changer,
-            end: false,
         }
     }
 }
 impl<'a> Iterator for BoardWalker<'a> {
     type Item = Action;
     fn next(&mut self) -> Option<Self::Item> {
-        if self.end {
-            return None;
-        }
         let new_pos = (self.pos.clone() + self.changer).ok()?;
-        self.end = self.board.has_piece(&new_pos);
-        self.pos = new_pos.clone();
-        Some(match self.end {
-            true => Action::Take(new_pos),
-            false => Action::MoveTo(new_pos),
-        })
+        self.pos = new_pos;
+        Action::new(self.piece, self.board, self.pos).ok()
     }
 }
 impl Display for Piece {

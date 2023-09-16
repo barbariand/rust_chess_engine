@@ -1,6 +1,6 @@
 use crate::chess_engine::board::MoveOffset;
 
-use super::{Action, BoardPosition, MovementOptions, PieceMovement};
+use super::{BoardPosition, MovementOptions, PieceMovement, Piece, BoardWalker};
 static POTENTIAL_MOVES: [(i8, i8); 8] = [
     (-1, 3),
     (1, -3),
@@ -15,6 +15,7 @@ static POTENTIAL_MOVES: [(i8, i8); 8] = [
 pub struct Knight;
 impl PieceMovement for Knight {
     fn get_movement_options(
+        piece:&Piece,
         pos: BoardPosition,
         board: &crate::chess_engine::board::Board,
         _: &super::Color,
@@ -25,13 +26,8 @@ impl PieceMovement for Knight {
         MovementOptions {
             0: POTENTIAL_MOVES
                 .into_iter()
-                .map(|v| (&pos + MoveOffset::from(v)).ok())
-                .flat_map(|v| {
-                    v.map(|pos| match board.has_piece(&pos) {
-                        true => Action::Take(pos),
-                        false => Action::MoveTo(pos),
-                    })
-                }).collect()
+                .map(|v| BoardWalker::new(&pos, &board, MoveOffset(v.0, v.1),piece).next()
+            ).flatten().collect()
         }
     }
 }

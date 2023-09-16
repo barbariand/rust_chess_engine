@@ -1,7 +1,8 @@
 use super::BoardPosition;
 use super::File;
-use super::MoveOffset;
 use super::Rank;
+use crate::chess_engine::history::History;
+use crate::chess_engine::pieces::Action;
 use crate::chess_engine::pieces::Color;
 use crate::chess_engine::pieces::Piece;
 use std::fmt::Display;
@@ -14,11 +15,15 @@ pub struct BoardRank([Option<Piece>; 8]);
 pub struct Board {
     inner_board: [BoardRank; 8],
     turn: Color,
+    history:History,
 }
 
 impl Board {
     pub fn has_piece(&self, pos: &BoardPosition) -> bool {
         self[&pos.rank][&pos.file].is_some()
+    }
+    pub fn is_piece_color(&self, pos:&BoardPosition,color:Color)->bool{
+        self[&pos.rank][&pos.file].is_some_and(|p|p.color==color)
     }
     pub fn new() -> Board {
         Board {
@@ -52,34 +57,28 @@ impl Board {
             ]
             .map(|v| BoardRank(v)),
             turn: Color::White,
+            history:History(Vec::new())
         }
     }
-    pub fn move_piece(&mut self, from: BoardPosition, to: MoveOffset) -> Result<(), String> {
-        let to_pos = (from.clone() + to)?;
-        self.move_to(from, to_pos)
+    pub fn move_piece(&mut self,action: Action){
+        action.execute(self);
+        self.history.add(action);
     }
-    pub fn move_to(&mut self, from: BoardPosition, to: BoardPosition) -> Result<(), String> {
-        let piece = self[from.rank][from.file]
-            .ok_or(String::from("There is no piece on that place"))
-            .and_then(|a| {
-                (a.color == self.turn)
-                    .then(|| a)
-                    .ok_or(String::from("Not your piece"))
-            })?;
-        piece.get_movement_options(self);
-        self[to.rank][to.file] = Some(piece);
-        self.turn = match self.turn {
-            Color::Black => Color::White,
-            Color::White => Color::Black,
-        };
-        Ok(())
+    pub fn get_movement_options() {}
+    pub fn into_iter(&self)->Box<dyn Iterator<Item = Piece>+ '_> {
+        Box::new(self.inner_board.iter().map(|a|a.0.into_iter().flatten().collect::<Vec<Piece>>()).flatten())
     }
 }
-impl IndexMut<Rank> for Board {
-    fn index_mut(&mut self, index: Rank) -> &mut Self::Output {
+impl IndexMut<&Rank> for Board {
+    fn index_mut(&mut self, index: &Rank) -> &mut Self::Output {
         self.inner_board
-            .get_mut(<Rank as Into<i8>>::into(index) as usize)
+            .get_mut(<&Rank as Into<i8>>::into(index) as usize)
             .expect("Rank is bigger than board")
+    }
+}
+impl IndexMut<&BoardPosition> for Board{
+    fn index_mut(&mut self, index: &BoardPosition) -> &mut Self::Output {
+        &mut self[&index.rank][&index.file]
     }
 }
 impl Index<&Rank> for Board {
@@ -102,6 +101,13 @@ impl IndexMut<File> for BoardRank {
     fn index_mut(&mut self, index: File) -> &mut Self::Output {
         self.0
             .get_mut(<File as Into<i8>>::into(index) as usize)
+            .expect("File is bigger than board")
+    }
+}
+impl IndexMut<&File> for BoardRank {
+    fn index_mut(&mut self, index: &File) -> &mut Self::Output {
+        self.0
+            .get_mut(<&File as Into<i8>>::into(index) as usize)
             .expect("File is bigger than board")
     }
 }
@@ -144,7 +150,7 @@ impl Display for BoardRank {
                 None => write!(f, "{:>3}|", " ")?,
             }
         }
-
         Ok(())
     }
 }
+
