@@ -92,11 +92,13 @@ impl MovementOptions {
                 .map(|movement| {
                     let allowed_action = &movement.allowed_action;
                     let condition = &movement.condition;
-                    PieceMovement::<NoAction, NoCondition>::from(movement)
-                        .into_iter()
-                        .map(|movement| BoardWalker::new(pos, board, movement, piece))
+                    BoardWalker::new(
+                        pos,
+                        board,
+                        PieceMovement::<NoAction, NoCondition>::from(movement).into(),
+                        piece,
+                    )
                 })
-                .flatten()
                 .flatten()
                 .collect(),
         )
@@ -166,12 +168,8 @@ impl<'a, C> PieceMovement<InnerAction, C> {
         &self.allowed_action
     }
 }
-impl IntoIterator for PieceMovement<NoAction, NoCondition> {
-    type Item = PieceStep;
-
-    type IntoIter = IntoIter<PieceStep>;
-
-    fn into_iter(self) -> Self::IntoIter {
+impl Into<Vec<PieceStep>> for PieceMovement<NoAction, NoCondition> {
+    fn into(self) -> Vec<PieceStep> {
         let mut action_vec: Vec<PieceStep> = Vec::new();
         let mut traversed = false;
         let mut last = self;
@@ -188,7 +186,7 @@ impl IntoIterator for PieceMovement<NoAction, NoCondition> {
             last = current;
         }
 
-        action_vec.into_iter()
+        action_vec
     }
 }
 impl<C> From<PieceMovement<InnerAction, C>> for PieceMovement<NoAction, NoCondition> {
@@ -201,12 +199,12 @@ impl<C> From<PieceMovement<InnerAction, C>> for PieceMovement<NoAction, NoCondit
         }
     }
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum PieceStep {
     Fixed(MovementDirection, i8),
     Full(MovementDirection),
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum MovementDirection {
     North,
     NorthEast,
@@ -293,35 +291,37 @@ pub(super) struct BoardWalker<'a> {
     piece: &'a Piece,
     pos: BoardPosition,
     board: &'a Board,
-    step: PieceStep,
+    steps: Vec<PieceStep>,
 }
 impl<'a> BoardWalker<'a> {
     fn new(
         pos: &BoardPosition,
         board: &'a Board,
-        step: PieceStep,
+        step: Vec<PieceStep>,
         piece: &'a Piece,
     ) -> BoardWalker<'a> {
         BoardWalker {
             piece,
             pos: pos.clone(),
             board,
-            step,
+            steps: step,
         }
     }
 }
 impl<'a> Iterator for BoardWalker<'a> {
     type Item = Action;
     fn next(&mut self) -> Option<Self::Item> {
-        let changer: MoveOffset = match &self.step {
-            PieceStep::Fixed(direction, len) => {
-                <&MovementDirection as Into<MoveOffset>>::into(direction) * len
-            }
-            PieceStep::Full(direction) => direction.into(),
-        };
+        for step in (&self.steps).into_iter() {
+            let changer: MoveOffset = match step {
+                PieceStep::Fixed(direction, len) => {
+                    <&MovementDirection as Into<MoveOffset>>::into(direction) * len
+                }
+                PieceStep::Full(direction) => direction.into(),
+            };
 
-        let new_pos = (self.pos.clone() + changer).ok()?;
-        self.pos = new_pos;
+            let new_pos = (self.pos.clone() + changer).ok()?;
+            self.pos = new_pos;
+        }
         Action::new(self.piece, self.board, self.pos).ok()
     }
 }
