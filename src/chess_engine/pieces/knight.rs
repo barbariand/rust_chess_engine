@@ -17,45 +17,69 @@ impl MovablePiece for Knight {
             //   .
             //   *
             PieceMovement::new(PieceStep::Fixed(MovementDirection::North, 2))
-                .addon(|| PieceMovement::new(PieceStep::Fixed(MovementDirection::West, 1)))
+                .addon(PieceMovement::new(PieceStep::Fixed(
+                    MovementDirection::West,
+                    1,
+                )))
                 .allowed_action(InnerAction::Take),
             // . .
             // .
             // *
             PieceMovement::new(PieceStep::Fixed(MovementDirection::North, 2))
-                .addon(|| PieceMovement::new(PieceStep::Fixed(MovementDirection::East, 1)))
+                .addon(PieceMovement::new(PieceStep::Fixed(
+                    MovementDirection::East,
+                    1,
+                )))
                 .allowed_action(InnerAction::Take),
             //     .
             // * . .
             PieceMovement::new(PieceStep::Fixed(MovementDirection::East, 2))
-                .addon(|| PieceMovement::new(PieceStep::Fixed(MovementDirection::North, 1)))
+                .addon(PieceMovement::new(PieceStep::Fixed(
+                    MovementDirection::North,
+                    1,
+                )))
                 .allowed_action(InnerAction::Take),
             // * . .
             //     .
             PieceMovement::new(PieceStep::Fixed(MovementDirection::East, 2))
-                .addon(|| PieceMovement::new(PieceStep::Fixed(MovementDirection::South, 1)))
+                .addon(PieceMovement::new(PieceStep::Fixed(
+                    MovementDirection::South,
+                    1,
+                )))
                 .allowed_action(InnerAction::Take),
             //   *
             //   .
             // . .
             PieceMovement::new(PieceStep::Fixed(MovementDirection::South, 2))
-                .addon(|| PieceMovement::new(PieceStep::Fixed(MovementDirection::West, 1)))
+                .addon(PieceMovement::new(PieceStep::Fixed(
+                    MovementDirection::West,
+                    1,
+                )))
                 .allowed_action(InnerAction::Take),
             // *
             // .
             // . .
             PieceMovement::new(PieceStep::Fixed(MovementDirection::South, 2))
-                .addon(|| PieceMovement::new(PieceStep::Fixed(MovementDirection::East, 1)))
+                .addon(PieceMovement::new(PieceStep::Fixed(
+                    MovementDirection::East,
+                    1,
+                )))
                 .allowed_action(InnerAction::Take),
             // .
             // . . *
             PieceMovement::new(PieceStep::Fixed(MovementDirection::West, 2))
-                .addon(|| PieceMovement::new(PieceStep::Fixed(MovementDirection::North, 1)))
+                .addon(PieceMovement::new(PieceStep::Fixed(
+                    MovementDirection::North,
+                    1,
+                )))
                 .allowed_action(InnerAction::Take),
             // . . *
             // .
             PieceMovement::new(PieceStep::Fixed(MovementDirection::West, 2))
-                .addon(|| PieceMovement::new(PieceStep::Fixed(MovementDirection::South, 1)))
+                .addon(PieceMovement::new(PieceStep::Fixed(
+                    MovementDirection::South,
+                    1,
+                )))
                 .allowed_action(InnerAction::Take),
         ];
 
