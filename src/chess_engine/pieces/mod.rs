@@ -76,10 +76,10 @@ pub enum InnerAction {
 }
 pub struct MovementOptions(Vec<Action>);
 impl MovementOptions {
-    pub fn new<'a>(
+    pub fn new<'a, C>(
         potential_moves: impl IntoIterator<
-            Item = PieceMovement<'a, InnerAction>,
-            IntoIter = IntoIter<PieceMovement<'a, InnerAction>>,
+            Item = PieceMovement<'a, InnerAction, C>,
+            IntoIter = IntoIter<PieceMovement<'a, InnerAction, C>>,
         >,
         pos: &BoardPosition,
         board: &'a Board,
@@ -109,24 +109,29 @@ trait MovablePiece {
 }
 #[derive(Default)]
 struct NoAction;
-pub struct PieceMovement<'a, A> {
+#[derive(Default)]
+struct NoCondition;
+trait PieceMovementCondition<'a>: Fn() -> bool + 'a + Clone {}
+#[derive(Clone)]
+struct Condition<'a>(Box<dyn PieceMovementCondition>);
+pub struct PieceMovement<'a, A, C> {
     step: PieceStep,
     allowed_action: A,
-    addon: Option<Box<dyn Fn() -> PieceMovement<'a, NoAction> + 'a>>,
-    condition: Option<Box<dyn Fn() -> bool + 'a>>,
+    addon: Option<Box<dyn Fn() -> PieceMovement<'a, NoAction, NoCondition> + 'a>>,
+    condition: C,
 }
-impl<'a> PieceMovement<'a, NoAction> {
+impl<'a> PieceMovement<'a, NoAction, NoCondition> {
     pub fn new(step: PieceStep) -> Self {
         Self {
             step,
             allowed_action: NoAction::default(),
             addon: None,
-            condition: None,
+            condition: NoCondition::default(),
         }
     }
 }
-impl<'a, A> PieceMovement<'a, A> {
-    fn allowed_action(self, action: InnerAction) -> PieceMovement<'a, InnerAction> {
+impl<'a, A, C> PieceMovement<'a, A, C> {
+    fn allowed_action(self, action: InnerAction) -> PieceMovement<'a, InnerAction, C> {
         PieceMovement {
             step: self.step,
             allowed_action: action,
@@ -135,14 +140,61 @@ impl<'a, A> PieceMovement<'a, A> {
         }
     }
 
-    fn addon(mut self, addon: impl Fn() -> PieceMovement<'a, NoAction> + 'a) -> Self {
+    fn addon(mut self, addon: impl Fn() -> PieceMovement<'a, NoAction, NoCondition> + 'a) -> Self {
         self.addon = Some(Box::new(addon));
         self
     }
 
-    fn condition(mut self, condition: impl Fn() -> bool + 'a) -> Self {
-        self.condition = Some(Box::new(condition));
-        self
+    fn condition(
+        mut self,
+        condition: impl Fn() -> bool + 'a,
+    ) -> PieceMovement<'a, A, Condition<'a>> {
+        PieceMovement {
+            step: self.step,
+            allowed_action: self.allowed_action,
+            addon: self.addon,
+            condition: Condition(Box::new(condition)),
+        }
+    }
+}
+impl<'a, C> PieceMovement<'a, InnerAction, C> {
+    fn get_allowed_action(&self) -> &InnerAction {
+        &self.allowed_action
+    }
+}
+impl<'a> IntoIterator for PieceMovement<'a, NoAction, NoCondition> {
+    type Item = PieceMovement<'a, NoAction, NoCondition>;
+
+    type IntoIter = IntoIter<PieceMovement<'a, NoAction, NoCondition>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        let mut action_vec: Vec<PieceMovement<'a, NoAction, NoCondition>> = Vec::new();
+        let mut traversed = false;
+        let mut last = self;
+
+        while !traversed {
+            let current = match &last.addon {
+                Some(func) => (*func)(),
+                None => {
+                    traversed = true;
+                    continue;
+                }
+            };
+            action_vec.push(last);
+            last = current;
+        }
+
+        action_vec.into_iter()
+    }
+}
+impl<'a, C> From<PieceMovement<'a, InnerAction, C>> for PieceMovement<'a, NoAction, NoCondition> {
+    fn from(value: PieceMovement<'a, InnerAction, C>) -> Self {
+        Self {
+            step: value.step,
+            allowed_action: NoAction::default(),
+            addon: value.addon,
+            condition: NoCondition::default(),
+        }
     }
 }
 #[derive(Debug, Clone)]
@@ -233,19 +285,19 @@ impl Display for Piece {
     }
 }
 
-pub(super) struct BoardWalker<'a> {
+pub(super) struct BoardWalker<'a, C> {
     piece: &'a Piece,
     pos: BoardPosition,
     board: &'a Board,
-    movement: PieceMovement<'a, InnerAction>,
+    movement: PieceMovement<'a, InnerAction, C>,
 }
-impl<'a> BoardWalker<'a> {
+impl<'a, C> BoardWalker<'a, C> {
     fn new(
         pos: &BoardPosition,
         board: &'a Board,
-        movement: PieceMovement<'a, InnerAction>,
+        movement: PieceMovement<'a, InnerAction, C>,
         piece: &'a Piece,
-    ) -> BoardWalker<'a> {
+    ) -> BoardWalker<'a, C> {
         BoardWalker {
             piece,
             pos: pos.clone(),
@@ -254,7 +306,7 @@ impl<'a> BoardWalker<'a> {
         }
     }
 }
-impl<'a> Iterator for BoardWalker<'a> {
+impl<'a, C> Iterator for BoardWalker<'a, C> {
     type Item = Action;
     fn next(&mut self) -> Option<Self::Item> {
         let changer: MoveOffset = match &self.movement.step {
@@ -263,6 +315,8 @@ impl<'a> Iterator for BoardWalker<'a> {
             }
             PieceStep::Full(direction) => direction.into(),
         };
+
+        let plain: PieceMovement<NoAction, NoCondition> = self.movement.into();
 
         let new_pos = (self.pos.clone() + changer).ok()?;
         self.pos = new_pos;
