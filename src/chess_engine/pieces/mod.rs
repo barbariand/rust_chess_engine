@@ -4,6 +4,7 @@ use super::{
 };
 use std::{
     fmt::{Debug, Display},
+    marker::PhantomData,
     ops::Deref,
     vec::IntoIter,
 };
@@ -111,9 +112,8 @@ trait MovablePiece {
 struct NoAction;
 #[derive(Default)]
 struct NoCondition;
-trait PieceMovementCondition<'a>: Fn() -> bool + 'a + Clone {}
-#[derive(Clone)]
-struct Condition<'a>(Box<dyn PieceMovementCondition>);
+trait PieceMovementCondition: Fn() -> bool {}
+struct Condition(Box<dyn PieceMovementCondition>);
 pub struct PieceMovement<'a, A, C> {
     step: PieceStep,
     allowed_action: A,
@@ -146,9 +146,9 @@ impl<'a, A, C> PieceMovement<'a, A, C> {
     }
 
     fn condition(
-        mut self,
-        condition: impl Fn() -> bool + 'a,
-    ) -> PieceMovement<'a, A, Condition<'a>> {
+        self,
+        condition: impl PieceMovementCondition + 'static,
+    ) -> PieceMovement<'a, A, Condition> {
         PieceMovement {
             step: self.step,
             allowed_action: self.allowed_action,
