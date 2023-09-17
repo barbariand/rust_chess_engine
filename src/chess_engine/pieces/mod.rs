@@ -70,7 +70,7 @@ impl Action {
         }
     }
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum InnerAction {
     Take,
     MoveTo,
@@ -90,8 +90,8 @@ impl MovementOptions {
             potential_moves
                 .into_iter()
                 .map(|movement| {
-                    let allowed_action = movement.allowed_action;
-                    let condition = movement.condition;
+                    let allowed_action = &movement.allowed_action;
+                    let condition = &movement.condition;
                     PieceMovement::<NoAction, NoCondition>::from(movement)
                         .into_iter()
                         .map(|movement| BoardWalker::new(pos, board, movement, piece))
@@ -117,7 +117,7 @@ trait MovablePiece {
 }
 #[derive(Default)]
 struct NoAction;
-#[derive(Default)]
+#[derive(Default, Clone, Copy)]
 struct NoCondition;
 trait PieceMovementCondition<'a> {}
 struct Condition<'a>(Box<dyn Fn() -> bool + 'a>);
@@ -166,7 +166,7 @@ impl<'a, C> PieceMovement<InnerAction, C> {
         &self.allowed_action
     }
 }
-impl<'a> IntoIterator for PieceMovement<NoAction, NoCondition> {
+impl IntoIterator for PieceMovement<NoAction, NoCondition> {
     type Item = PieceMovement<NoAction, NoCondition>;
 
     type IntoIter = IntoIter<PieceMovement<NoAction, NoCondition>>;
@@ -191,7 +191,7 @@ impl<'a> IntoIterator for PieceMovement<NoAction, NoCondition> {
         action_vec.into_iter()
     }
 }
-impl<'a, C> From<PieceMovement<InnerAction, C>> for PieceMovement<NoAction, NoCondition> {
+impl<C> From<PieceMovement<InnerAction, C>> for PieceMovement<NoAction, NoCondition> {
     fn from(value: PieceMovement<InnerAction, C>) -> Self {
         Self {
             step: value.step,
