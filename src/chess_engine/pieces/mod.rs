@@ -161,6 +161,20 @@ pub enum MovementDirection {
     West,
     NorthWest,
 }
+impl Into<MoveOffset> for &MovementDirection {
+    fn into(self) -> MoveOffset {
+        match self {
+            MovementDirection::North => MoveOffset(-1, 0),
+            MovementDirection::NorthEast => MoveOffset(-1, 1),
+            MovementDirection::East => MoveOffset(0, -1),
+            MovementDirection::SouthEast => MoveOffset(1, -1),
+            MovementDirection::South => MoveOffset(1, 0),
+            MovementDirection::SouthWest => MoveOffset(1, 1),
+            MovementDirection::West => MoveOffset(0, 1),
+            MovementDirection::NorthWest => MoveOffset(-1, -1),
+        }
+    }
+}
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub enum Color {
     Black,
@@ -243,18 +257,11 @@ impl<'a> BoardWalker<'a> {
 impl<'a> Iterator for BoardWalker<'a> {
     type Item = Action;
     fn next(&mut self) -> Option<Self::Item> {
-        let changer = match &self.movement.step {
-            PieceStep::Fixed(direction, len) => todo!("implement walk with fixed range"),
-            PieceStep::Full(direction) => match direction {
-                MovementDirection::North => MoveOffset(-1, 0),
-                MovementDirection::NorthEast => MoveOffset(-1, 1),
-                MovementDirection::East => MoveOffset(0, -1),
-                MovementDirection::SouthEast => MoveOffset(1, -1),
-                MovementDirection::South => MoveOffset(1, 0),
-                MovementDirection::SouthWest => MoveOffset(1, 1),
-                MovementDirection::West => MoveOffset(0, 1),
-                MovementDirection::NorthWest => MoveOffset(-1, -1),
-            },
+        let changer: MoveOffset = match &self.movement.step {
+            PieceStep::Fixed(direction, len) => {
+                <&MovementDirection as Into<MoveOffset>>::into(direction) * len
+            }
+            PieceStep::Full(direction) => direction.into(),
         };
 
         let new_pos = (self.pos.clone() + changer).ok()?;
