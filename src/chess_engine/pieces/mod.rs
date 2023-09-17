@@ -167,12 +167,12 @@ impl<'a, C> PieceMovement<InnerAction, C> {
     }
 }
 impl IntoIterator for PieceMovement<NoAction, NoCondition> {
-    type Item = PieceMovement<NoAction, NoCondition>;
+    type Item = PieceStep;
 
-    type IntoIter = IntoIter<PieceMovement<NoAction, NoCondition>>;
+    type IntoIter = IntoIter<PieceStep>;
 
     fn into_iter(self) -> Self::IntoIter {
-        let mut action_vec: Vec<PieceMovement<NoAction, NoCondition>> = Vec::new();
+        let mut action_vec: Vec<PieceStep> = Vec::new();
         let mut traversed = false;
         let mut last = self;
 
@@ -184,7 +184,7 @@ impl IntoIterator for PieceMovement<NoAction, NoCondition> {
                     continue;
                 }
             };
-            action_vec.push(last);
+            action_vec.push(last.step);
             last = current;
         }
 
@@ -293,27 +293,27 @@ pub(super) struct BoardWalker<'a> {
     piece: &'a Piece,
     pos: BoardPosition,
     board: &'a Board,
-    movement: PieceMovement<NoAction, NoCondition>,
+    step: PieceStep,
 }
 impl<'a> BoardWalker<'a> {
     fn new(
         pos: &BoardPosition,
         board: &'a Board,
-        movement: PieceMovement<NoAction, NoCondition>,
+        step: PieceStep,
         piece: &'a Piece,
     ) -> BoardWalker<'a> {
         BoardWalker {
             piece,
             pos: pos.clone(),
             board,
-            movement,
+            step,
         }
     }
 }
 impl<'a> Iterator for BoardWalker<'a> {
     type Item = Action;
     fn next(&mut self) -> Option<Self::Item> {
-        let changer: MoveOffset = match &self.movement.step {
+        let changer: MoveOffset = match &self.step {
             PieceStep::Fixed(direction, len) => {
                 <&MovementDirection as Into<MoveOffset>>::into(direction) * len
             }
