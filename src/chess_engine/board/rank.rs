@@ -1,8 +1,8 @@
-use std::{ops::{Add, Sub}, str::FromStr};
+use std::ops::{Add, Sub};
 
-use crate::chess_engine::{Error, errors::BoardPositionError};
+use crate::chess_engine::{errors::BoardPositionError, Error};
 
-#[derive(Debug, Clone, Copy,PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Rank {
     One,
     Two,
@@ -56,7 +56,10 @@ impl TryFrom<i8> for Rank {
             6 => Self::Six,
             7 => Self::Seven,
             8 => Self::Eight,
-            err => Err(BoardPositionError::NotARank(format!("{} is not a valid file", err)))?,
+            err => Err(BoardPositionError::NotARank(format!(
+                "{} is not a valid file",
+                err
+            )))?,
         })
     }
 }
