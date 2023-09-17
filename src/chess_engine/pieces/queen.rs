@@ -1,33 +1,37 @@
-use crate::chess_engine::board::MoveOffset;
+use crate::chess_engine::board::{Board, MoveOffset};
 
-use super::{BoardPosition, BoardWalker, MovementOptions, PieceMovement, Piece};
-static POTENTIAL_MOVES: [(i8, i8); 8] = [
-    (-1, -1), // Top-left
-    (-1, 0),  // Top
-    (-1, 1),  // Top-right
-    (0, -1),  // Left
-    (0, 1),   // Right
-    (1, -1),  // Bottom-left
-    (1, 0),   // Bottom
-    (1, 1),   // Bottom-right
-];
+use super::{
+    BoardPosition, BoardWalker, InnerAction, MovablePiece, MovementDirection, MovementOptions,
+    Piece, PieceMovement, PieceStep,
+};
+
 #[derive(Debug, Clone)]
 pub struct Queen;
-impl PieceMovement for Queen {
-    fn get_movement_options(
-        piece:&Piece,
-        pos: BoardPosition,
-        board: &crate::chess_engine::board::Board,
-        _: &super::Color,
-    ) -> MovementOptions
-    where
-        Self: Sized,
-    {
-        MovementOptions {
-            0: POTENTIAL_MOVES
-                .iter()
-                .map(|v| BoardWalker::new(&pos, &board, MoveOffset(v.0, v.1),piece))
-                .flatten().collect()
-        }
+impl MovablePiece for Queen {
+    fn get_movement_options<'a>(
+        pos: &BoardPosition,
+        board: &'a Board,
+        piece: &'a Piece,
+    ) -> MovementOptions {
+        let potential_moves = vec![
+            PieceMovement::new(PieceStep::Full(MovementDirection::East))
+                .allowed_action(InnerAction::Take),
+            PieceMovement::new(PieceStep::Full(MovementDirection::North))
+                .allowed_action(InnerAction::Take),
+            PieceMovement::new(PieceStep::Full(MovementDirection::NorthEast))
+                .allowed_action(InnerAction::Take),
+            PieceMovement::new(PieceStep::Full(MovementDirection::NorthWest))
+                .allowed_action(InnerAction::Take),
+            PieceMovement::new(PieceStep::Full(MovementDirection::South))
+                .allowed_action(InnerAction::Take),
+            PieceMovement::new(PieceStep::Full(MovementDirection::SouthEast))
+                .allowed_action(InnerAction::Take),
+            PieceMovement::new(PieceStep::Full(MovementDirection::SouthWest))
+                .allowed_action(InnerAction::Take),
+            PieceMovement::new(PieceStep::Full(MovementDirection::West))
+                .allowed_action(InnerAction::Take),
+        ];
+
+        MovementOptions::new(potential_moves, pos, board, piece)
     }
 }

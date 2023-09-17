@@ -4,6 +4,7 @@ use super::Rank;
 use crate::chess_engine::history::History;
 use crate::chess_engine::pieces::Action;
 use crate::chess_engine::pieces::Color;
+use crate::chess_engine::pieces::InnerPiece;
 use crate::chess_engine::pieces::Piece;
 use std::fmt::Display;
 use std::ops::Index;
@@ -15,58 +16,63 @@ pub struct BoardRank([Option<Piece>; 8]);
 pub struct Board {
     inner_board: [BoardRank; 8],
     turn: Color,
-    history:History,
+    history: History,
 }
 
 impl Board {
     pub fn has_piece(&self, pos: &BoardPosition) -> bool {
         self[&pos.rank][&pos.file].is_some()
     }
-    pub fn is_piece_color(&self, pos:&BoardPosition,color:Color)->bool{
-        self[&pos.rank][&pos.file].is_some_and(|p|p.color==color)
+    pub fn is_piece_color(&self, pos: &BoardPosition, color: Color) -> bool {
+        self[&pos.rank][&pos.file].is_some_and(|p| p.color == color)
     }
     pub fn new() -> Board {
         Board {
             inner_board: [
                 [
-                    Some(Piece::new_rook(Color::Black)),
-                    Some(Piece::new_knight(Color::Black)),
-                    Some(Piece::new_bishop(Color::Black)),
-                    Some(Piece::new_queen(Color::Black)),
-                    Some(Piece::new_king(Color::Black)),
-                    Some(Piece::new_bishop(Color::Black)),
-                    Some(Piece::new_knight(Color::Black)),
-                    Some(Piece::new_rook(Color::Black)),
+                    Some(Piece::new(Color::Black, InnerPiece::Rook)),
+                    Some(Piece::new(Color::Black, InnerPiece::Knight)),
+                    Some(Piece::new(Color::Black, InnerPiece::Bishop)),
+                    Some(Piece::new(Color::Black, InnerPiece::Queen)),
+                    Some(Piece::new(Color::Black, InnerPiece::King)),
+                    Some(Piece::new(Color::Black, InnerPiece::Rook)),
+                    Some(Piece::new(Color::Black, InnerPiece::Knight)),
+                    Some(Piece::new(Color::Black, InnerPiece::Bishop)),
                 ],
-                [Some(Piece::new_pawn(Color::Black)); 8],
+                [Some(Piece::new(Color::Black, InnerPiece::Pawn)); 8],
                 [None; 8],
                 [None; 8],
                 [None; 8],
                 [None; 8],
-                [Some(Piece::new_pawn(Color::White)); 8],
+                [Some(Piece::new(Color::White, InnerPiece::Pawn)); 8],
                 [
-                    Some(Piece::new_rook(Color::White)),
-                    Some(Piece::new_knight(Color::White)),
-                    Some(Piece::new_bishop(Color::White)),
-                    Some(Piece::new_queen(Color::White)),
-                    Some(Piece::new_king(Color::White)),
-                    Some(Piece::new_bishop(Color::White)),
-                    Some(Piece::new_knight(Color::White)),
-                    Some(Piece::new_rook(Color::White)),
+                    Some(Piece::new(Color::White, InnerPiece::Knight)),
+                    Some(Piece::new(Color::White, InnerPiece::Rook)),
+                    Some(Piece::new(Color::White, InnerPiece::Bishop)),
+                    Some(Piece::new(Color::White, InnerPiece::Queen)),
+                    Some(Piece::new(Color::White, InnerPiece::King)),
+                    Some(Piece::new(Color::White, InnerPiece::Rook)),
+                    Some(Piece::new(Color::White, InnerPiece::Knight)),
+                    Some(Piece::new(Color::White, InnerPiece::Bishop)),
                 ],
             ]
             .map(|v| BoardRank(v)),
             turn: Color::White,
-            history:History(Vec::new())
+            history: History(Vec::new()),
         }
     }
-    pub fn move_piece(&mut self,action: Action){
+    pub fn move_piece(&mut self, action: Action) {
         action.execute(self);
         self.history.add(action);
     }
     pub fn get_movement_options() {}
-    pub fn into_iter(&self)->Box<dyn Iterator<Item = Piece>+ '_> {
-        Box::new(self.inner_board.iter().map(|a|a.0.into_iter().flatten().collect::<Vec<Piece>>()).flatten())
+    pub fn into_iter(&self) -> Box<dyn Iterator<Item = Piece> + '_> {
+        Box::new(
+            self.inner_board
+                .iter()
+                .map(|a| a.0.into_iter().flatten().collect::<Vec<Piece>>())
+                .flatten(),
+        )
     }
 }
 impl IndexMut<&Rank> for Board {
@@ -76,7 +82,7 @@ impl IndexMut<&Rank> for Board {
             .expect("Rank is bigger than board")
     }
 }
-impl IndexMut<&BoardPosition> for Board{
+impl IndexMut<&BoardPosition> for Board {
     fn index_mut(&mut self, index: &BoardPosition) -> &mut Self::Output {
         &mut self[&index.rank][&index.file]
     }
@@ -153,4 +159,3 @@ impl Display for BoardRank {
         Ok(())
     }
 }
-
