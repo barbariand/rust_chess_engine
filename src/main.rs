@@ -1,9 +1,10 @@
 #![feature(allocator_api)]
 use chess_engine::board::Board;
 
-mod chess_engine;
-
+mod bevy_app;
+pub mod chess_engine;
 fn main() {
-    let board=Board::new();
-    println!("{}",board)
+    bevy_app::run();
+    let board = Board::new();
+    println!("{}", board)
 }
