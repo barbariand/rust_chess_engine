@@ -75,6 +75,11 @@ impl Board {
         )
     }
 }
+impl Default for Board {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 impl IndexMut<&Rank> for Board {
     fn index_mut(&mut self, index: &Rank) -> &mut Self::Output {
         self.inner_board
