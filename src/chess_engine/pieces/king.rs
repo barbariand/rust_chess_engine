@@ -34,3 +34,5 @@ impl MovablePiece for King {
         MovementOptions::new(potential_moves, pos, board, piece)
     }
 }
+
+// Hej Ludvig. Alvin skrev detta på Cindys dator!!! hehe
