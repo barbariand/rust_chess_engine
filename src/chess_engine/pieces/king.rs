@@ -4,6 +4,7 @@ use super::{
     BoardPosition, InnerAction, MovablePiece, MovementDirection, MovementOptions, Piece,
     PieceMovement, PieceStep,
 };
+
 #[derive(Debug, Clone)]
 pub struct King;
 impl MovablePiece for King {

@@ -1,6 +1,6 @@
 use std::{ops::Add, str::FromStr};
 
-use crate::chess_engine::{Error, errors::BoardPositionError};
+use crate::chess_engine::{errors::BoardPositionError, Error};
 
 use super::{File, MoveOffset, Rank};
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -12,6 +12,9 @@ pub struct BoardPosition {
 impl BoardPosition {
     pub fn new(file: File, rank: Rank) -> Self {
         BoardPosition { file, rank }
+    }
+    pub fn to_num(&self) -> usize {
+        (self.rank as u8 + self.file as u8) as usize
     }
 }
 impl Add<MoveOffset> for BoardPosition {
@@ -30,7 +33,7 @@ impl FromStr for BoardPosition {
             Err(BoardPositionError::CharOverflow)?;
         }
         if s.len() < 2 {
-            Err(BoardPositionError::CharUnderflow)?;// ;)
+            Err(BoardPositionError::CharUnderflow)?; // ;)
         }
         Ok(BoardPosition {
             file: File::try_from(

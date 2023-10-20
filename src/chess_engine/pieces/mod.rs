@@ -20,7 +20,13 @@ pub use knight::Knight;
 pub use pawn::Pawn;
 pub use queen::Queen;
 pub use rook::Rook;
-
+pub mod tables {
+    pub mod innertable {
+        include!(concat!(env!("OUT_DIR"), "/movetables.rs"));
+    }
+    pub use innertable::king_moves_bitmask as king_movetable;
+    pub use innertable::rook_moves_bitmask as rook_movetable;
+}
 #[derive(Debug, Clone)]
 pub struct Action {
     pub piece_pos: BoardPosition,
