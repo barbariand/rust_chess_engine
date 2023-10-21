@@ -1,0 +1,5 @@
+Id(0):FPSNode(
+    name: "ZombieFPS",
+    fps: 60,
+    then: Id(1),
+)

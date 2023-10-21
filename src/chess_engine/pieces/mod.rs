@@ -75,7 +75,7 @@ pub enum InnerAction {
     Take,
     MoveTo,
 }
-pub struct MovementOptions(Vec<Action>);
+pub struct MovementOptions(pub Vec<Action>);
 impl MovementOptions {
     pub fn new<'a, C>(
         potential_moves: impl IntoIterator<
@@ -257,6 +257,9 @@ impl Piece {
             pos: None,
             type_of_piece,
         }
+    }
+    pub fn get_piece_type(&self)->InnerPiece{
+        self.type_of_piece
     }
 }
 impl Piece {

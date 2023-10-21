@@ -65,14 +65,20 @@ impl Board {
         action.execute(self);
         self.history.add(action);
     }
-    pub fn get_movement_options() {}
-    pub fn into_iter(&self) -> Box<dyn Iterator<Item = Piece> + '_> {
-        Box::new(
-            self.inner_board
-                .iter()
-                .map(|a| a.0.into_iter().flatten().collect::<Vec<Piece>>())
-                .flatten(),
-        )
+    pub fn get_movement_options(&self) -> Vec<Action> {
+        self.into_iter()
+            .filter_map(|p| {
+                if let Some(piece) = p {
+                    piece.get_movement_options(&self).map(|v| v.0)
+                } else {
+                    None
+                }
+            })
+            .flatten()
+            .collect()
+    }
+    pub fn into_iter(&self) -> Box<dyn Iterator<Item = Option<Piece>> + '_> {
+        Box::new(self.inner_board.iter().map(|a| a.0.into_iter()).flatten())
     }
 }
 impl Default for Board {

@@ -1,0 +1,173 @@
+[
+ScriptNode(
+	#name "Stop Stand Up F"
+	#id Id(13)
+	#fallback Id(3)
+	if Index("Stand") >= 6 set Attribute("ZombieState") Ron("Idle") return Id(8) ),
+ScriptNode(
+	#name "Stop Stand Up B"
+	#id Id(12)
+	#fallback Id(3)
+	if Index("Stand") >= 6 set Attribute("ZombieState") Ron("Idle") return Id(10) ),
+ScriptNode(
+	#name "Stop Attack"
+	#id Id(11)
+	#fallback Id(3)
+	if Index("Attack") >= 10 set Attribute("ZombieState") Ron("Idle") return Id(6) ),
+ScriptNode(
+	#name "End Fall F"
+	#id Id(14)
+	#fallback Id(3)
+	if Index("Fall") >= 5 set Attribute("ZombieState") Ron("LayingF") return Id(7) ),
+ScriptNode(
+	#name "End Fall B"
+	#id Id(15)
+	#fallback Id(3)
+	if Index("Fall") >= 6 set Attribute("ZombieState") Ron("LayingB") return Id(9) ),
+Id(1):MatchNode<ZState>(
+	name: "sequense_SwitchNode",
+	check: Custom("ZombieState"),
+	default: Id(3),
+	pairs: [
+	(LayingF, Id(7)),
+	(Idle, Id(3)),
+	(StandB, Id(12)),
+	(LayingB, Id(9)),
+	(StandF, Id(13)),
+	(FallB, Id(15)),
+	(FallF, Id(14)),
+	(Walking, Id(2)),
+	(Attacking, Id(11)),
+	(Running, Id(5)),
+	(Test, Id(3)),
+	],),
+Id(3):IndexNode(
+	name: "sequense_Idle",
+	frames: [
+	"sequense/out000.png",
+	"sequense/out001.png",
+	"sequense/out002.png",
+	"sequense/out003.png",
+	"sequense/out004.png",
+	"sequense/out005.png",
+	"sequense/out006.png",
+	"sequense/out007.png",
+	"sequense/out008.png",
+	],
+	isloop: true,
+	index: Index(0),
+	),
+Id(4):IndexNode(
+	name: "sequense_Walking",
+	frames: [
+	"sequense/out009.png",
+	"sequense/out010.png",
+	"sequense/out011.png",
+	"sequense/out012.png",
+	"sequense/out013.png",
+	"sequense/out014.png",
+	"sequense/out015.png",
+	"sequense/out016.png",
+	"sequense/out017.png",
+	"sequense/out018.png",
+	"sequense/out019.png",
+	"sequense/out020.png",
+	],
+	isloop: true,
+	index: Index(0),
+	),
+Id(5):IndexNode(
+	name: "sequense_Running",
+	frames: [
+	"sequense/out021.png",
+	"sequense/out022.png",
+	"sequense/out023.png",
+	"sequense/out024.png",
+	"sequense/out025.png",
+	"sequense/out026.png",
+	"sequense/out027.png",
+	"sequense/out028.png",
+	],
+	isloop: true,
+	index: Index(0),
+	),
+Id(6):VariableNode(
+	name: "sequense_Attacking",
+	frames: [
+	("sequense/out029.png", 0.025),
+	("sequense/out030.png", 0.035),
+	("sequense/out031.png", 0.045),
+	("sequense/out032.png", 0.055),
+	("sequense/out033.png", 0.065),
+	("sequense/out034.png", 0.075),
+	("sequense/out035.png", 0.065),
+	("sequense/out036.png", 0.055),
+	("sequense/out037.png", 0.045),
+	("sequense/out038.png", 0.035),
+	("sequense/out039.png", 0.025),
+	],
+	isloop: true,
+	index: Index("Attack"),
+	),
+Id(7):IndexNode(
+	name: "sequense_FallF",
+	frames: [
+	"sequense/out040.png",
+	"sequense/out041.png",
+	"sequense/out042.png",
+	"sequense/out043.png",
+	"sequense/out044.png",
+	"sequense/out045.png",
+	],
+	isloop: false,
+	index: Index("Fall"),
+	),
+Id(8):IndexNode(
+	name: "sequense_StandF",
+	frames: [
+	"sequense/out046.png",
+	"sequense/out047.png",
+	"sequense/out048.png",
+	"sequense/out049.png",
+	"sequense/out050.png",
+	"sequense/out051.png",
+	"sequense/out052.png",
+	],
+	isloop: false,
+	index: Index("Stand"),
+	),
+Id(9):IndexNode(
+	name: "sequense_FallB",
+	frames: [
+	"sequense/out053.png",
+	"sequense/out054.png",
+	"sequense/out055.png",
+	"sequense/out056.png",
+	"sequense/out057.png",
+	"sequense/out058.png",
+	"sequense/out059.png",
+	],
+	isloop: false,
+	index: Index("Fall"),
+	),
+Id(10):IndexNode(
+	name: "sequense_StandB",
+	frames: [
+	"sequense/out060.png",
+	"sequense/out061.png",
+	"sequense/out062.png",
+	"sequense/out063.png",
+	"sequense/out064.png",
+	"sequense/out065.png",
+	"sequense/out066.png",
+	"sequense/out067.png",
+	],
+	isloop: false,
+	index: Index("Stand"),
+	),
+Id(2):ScaleNode(
+	name: "WalkScale",
+	next: Id(4),
+	scale: Custom("WSpeed"),
+)
+]
