@@ -13,6 +13,7 @@ use crate::chess_engine::pieces::Pawn;
 use crate::chess_engine::pieces::Piece;
 use crate::chess_engine::pieces::Queen;
 use crate::chess_engine::pieces::Rook;
+use std::collections::HashMap;
 use std::fmt::Display;
 use std::marker::PhantomData;
 use std::ops::Index;
@@ -20,38 +21,25 @@ use std::ops::IndexMut;
 
 #[derive(Debug, Clone)]
 struct InnerBoard {
-    pawns: PieceBoard<Pawn>,
-    kings: PieceBoard<King>,
-    queen: PieceBoard<Queen>,
-    rook: PieceBoard<Rook>,
-    bishop: PieceBoard<Bishop>,
-    knight: PieceBoard<Knight>,
+    pieces: HashMap<InnerPiece, PieceBoard>,
 }
 #[derive(Debug, Clone)]
-struct PieceBoard<T> {
+struct PieceBoard {
     white_piece: BitMap64,
     black_piece: BitMap64,
-    phantom: PhantomData<T>,
 }
 impl Default for InnerBoard {
     fn default() -> Self {
         InnerBoard {
-            pawns: PieceBoard::<Pawn>::new(),
-            rook: PieceBoard::<Rook>::new(),
-
-            knight: PieceBoard::<Knight>::new(),
-            bishop: PieceBoard::<Bishop>::new(),
-            kings: PieceBoard::<King>::new(),
-            queen: PieceBoard::<Queen>::new(),
+            pieces: HashMap::new(),
         }
     }
 }
 
-impl Index<BoardPosition> for InnerBoard {
-    type Output = Option<Piece>;
-    fn index<'a>(&'a self, index: BoardPosition) -> &'a Self::Output {
+impl InnerBoard {
+    fn get(&self, index: BoardPosition) -> Option<Piece> {
         let square = index.to_num();
-        let num=self.pawns.get_white_squares().get_bit_value(square) << 1
+        let num = self.pawns.get_white_squares().get_bit_value(square) << 1
             | self.rook.get_white_squares().get_bit_value(square) << 2
             | self.knight.get_white_squares().get_bit_value(square) << 3
             | self.bishop.get_white_squares().get_bit_value(square) << 4
@@ -63,12 +51,11 @@ impl Index<BoardPosition> for InnerBoard {
             | self.bishop.get_black_squares().get_bit_value(square) << 10
             | self.kings.get_black_squares().get_bit_value(square) << 11
             | self.queen.get_black_squares().get_bit_value(square) << 12;
-        &'a Piece::try_from_bitmap(index,num)
+        Piece::try_from_bitmap(index, num)
     }
 }
 
-
-impl<T> PieceBoard<T> {
+impl PieceBoard {
     fn new_custom(white: i64, black: i64) -> PieceBoard<T> {
         PieceBoard {
             white_piece: BitMap64::new(white),
@@ -77,10 +64,10 @@ impl<T> PieceBoard<T> {
         }
     }
 }
-impl<T> PieceBoard<T> {
-    fn remove_piece(&mut self, pos:&BoardPosition){
-        self.white_piece=self.white_piece^(0b1<<pos.to_num());
-        self.black_piece=self.black_piece^(0b1<<pos.to_num());
+impl PieceBoard {
+    fn remove_piece(&mut self, pos: &BoardPosition) {
+        self.white_piece = self.white_piece ^ (0b1 << pos.to_num());
+        self.black_piece = self.black_piece ^ (0b1 << pos.to_num());
     }
     fn get_occupied_squares(&self) -> BitMap64 {
         self.white_piece | self.black_piece
@@ -117,40 +104,28 @@ impl<T> PieceBoard<T> {
     fn count_black_pieces(&self) -> u8 {
         self.get_black_squares().count_ones()
     }
-}
-
-impl PieceBoard<Pawn> {
-    fn new() -> PieceBoard<Pawn> {
+    fn new_pawn() -> PieceBoard {
         PieceBoard::new_custom(0b11111111 << 56, 0b11111111 << 8)
     }
-}
-impl PieceBoard<King> {
-    fn new() -> PieceBoard<King> {
+    fn new_king() -> PieceBoard {
         PieceBoard::new_custom(0b1 << 60, 0b1 << 5)
     }
-}
-impl PieceBoard<Bishop> {
-    fn new() -> PieceBoard<Bishop> {
+    fn new_bishop() -> PieceBoard {
         PieceBoard::new_custom(0b00100100 << 56, 0b00100100 << 8)
     }
-}
-impl PieceBoard<Knight> {
-    fn new() -> PieceBoard<Knight> {
+    fn new_knight() -> PieceBoard {
         PieceBoard::new_custom(0b01000010 << 56, 0b01000010 << 8)
     }
-}
-impl PieceBoard<Rook> {
-    fn new() -> PieceBoard<Rook> {
+    fn new_rook() -> PieceBoard {
         PieceBoard::new_custom(0b10000001 << 56, 0b10000001 << 8)
     }
-}
-impl PieceBoard<Queen> {
-    fn new() -> PieceBoard<Queen> {
+    fn new_queen() -> PieceBoard {
         PieceBoard::new_custom(0b1 << 59, 0b1 << 4)
     }
 }
+
 impl InnerBoard {
-    pub fn remove_piece(&mut self, ){
+    pub fn remove_piece(&mut self) {
         //impl stuff
     }
     pub fn get_all_occupied_squares(&self) -> BitMap64 {
@@ -212,8 +187,10 @@ pub struct Board {
 }
 
 impl Board {
-    pub fn has_piece(&self,pos:&BoardPosition)->bool{
-        self.inner_board.get_all_occupied_squares().contains(pos.to_num())
+    pub fn has_piece(&self, pos: &BoardPosition) -> bool {
+        self.inner_board
+            .get_all_occupied_squares()
+            .contains(pos.to_num())
     }
     pub fn is_piece_color(&self, pos: &BoardPosition, color: Color) -> bool {
         match color {
@@ -238,7 +215,6 @@ impl Board {
 
 impl Display for Board {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        
         Ok(())
     }
 }

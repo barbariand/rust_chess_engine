@@ -241,7 +241,7 @@ pub enum InnerPiece {
     Knight,
     Bishop,
     King,
-    Queen,   
+    Queen,
 }
 
 impl Piece {
@@ -268,23 +268,27 @@ impl Piece {
             InnerPiece::Rook => Rook::get_movement_options(&pos, board, self),
         })
     }
-    pub fn try_from_bitmap(pos:BoardPosition,piece_type:i64)->Option<Piece>{
-        let is_black=piece_type>0b100000;
-        if is_black{
-            piece_type=piece_type>>6
+    pub fn try_from_bitmap(pos: BoardPosition, mut piece_type: i64) -> Option<Piece> {
+        let is_black = piece_type > 0b100000;
+        if is_black {
+            piece_type = piece_type >> 6
         }
-        Some(Self { color: match is_black{
-            false=>Color::White,
-            true=>Color::Black
-        }, pos:Some(pos), type_of_piece: match piece_type{
-            0b1=>InnerPiece::Pawn,
-            0b1=>InnerPiece::Rook,
-            0b1=>InnerPiece::Knight,
-            0b1=>InnerPiece::Bishop,
-            0b1=>InnerPiece::King,
-            0b1=>InnerPiece::Queen,
-            e=>return None
-        } })
+        Some(Self {
+            color: match is_black {
+                false => Color::White,
+                true => Color::Black,
+            },
+            pos: Some(pos),
+            type_of_piece: match piece_type {
+                0b1 => InnerPiece::Pawn,
+                0b1 => InnerPiece::Rook,
+                0b1 => InnerPiece::Knight,
+                0b1 => InnerPiece::Bishop,
+                0b1 => InnerPiece::King,
+                0b1 => InnerPiece::Queen,
+                e => return None,
+            },
+        })
     }
 }
 impl Display for Piece {

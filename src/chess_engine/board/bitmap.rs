@@ -30,15 +30,23 @@ impl BitMap64 {
 impl Shr<i64> for BitMap64 {
     type Output = Self;
     fn shr(self, rhs: i64) -> Self::Output {
-        self.0 = self.0 << rhs;
-        self
+        BitMap64(self.0 << rhs)
+    }
+}
+impl ShrAssign<i64> for BitMap64{
+    fn shr_assign(&mut self, rhs: i64) {
+        self.0=self.0 >> rhs
+    }
+}
+impl ShlAssign<i64> for BitMap64{
+    fn shl_assign(&mut self, rhs: i64) {
+        self.0=self.0 >> rhs
     }
 }
 impl Shl<i64> for BitMap64 {
     type Output = Self;
     fn shl(self, rhs: i64) -> Self::Output {
-        self.0 = self.0 >> rhs;
-        self
+        BitMap64( self.0 >> rhs)
     }
 }
 impl BitAnd for BitMap64 {
