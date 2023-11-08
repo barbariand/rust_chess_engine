@@ -6,22 +6,23 @@ use crate::chess_engine::history::History;
 use crate::chess_engine::pieces::Action;
 use crate::chess_engine::pieces::Bishop;
 use crate::chess_engine::pieces::Color;
-use crate::chess_engine::pieces::InnerPiece;
 use crate::chess_engine::pieces::King;
 use crate::chess_engine::pieces::Knight;
 use crate::chess_engine::pieces::Pawn;
 use crate::chess_engine::pieces::Piece;
+use crate::chess_engine::pieces::PieceType;
 use crate::chess_engine::pieces::Queen;
 use crate::chess_engine::pieces::Rook;
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::marker::PhantomData;
+use std::ops::Deref;
 use std::ops::Index;
 use std::ops::IndexMut;
 
 #[derive(Debug, Clone)]
 struct InnerBoard {
-    pieces: HashMap<InnerPiece, PieceBoard>,
+    pieces: HashMap<PieceType, PieceBoard>,
 }
 #[derive(Debug, Clone)]
 struct PieceBoard {
@@ -35,22 +36,21 @@ impl Default for InnerBoard {
         }
     }
 }
+impl Deref for InnerBoard {
+    type Target = HashMap<PieceType, PieceBoard>;
 
+    fn deref(&self) -> &Self::Target {
+        &self.pieces
+    }
+}
 impl InnerBoard {
     fn get(&self, index: BoardPosition) -> Option<Piece> {
         let square = index.to_num();
-        let num = self.pawns.get_white_squares().get_bit_value(square) << 1
-            | self.rook.get_white_squares().get_bit_value(square) << 2
-            | self.knight.get_white_squares().get_bit_value(square) << 3
-            | self.bishop.get_white_squares().get_bit_value(square) << 4
-            | self.kings.get_white_squares().get_bit_value(square) << 5
-            | self.queen.get_white_squares().get_bit_value(square) << 6
-            | self.pawns.get_black_squares().get_bit_value(square) << 7
-            | self.rook.get_black_squares().get_bit_value(square) << 8
-            | self.knight.get_black_squares().get_bit_value(square) << 9
-            | self.bishop.get_black_squares().get_bit_value(square) << 10
-            | self.kings.get_black_squares().get_bit_value(square) << 11
-            | self.queen.get_black_squares().get_bit_value(square) << 12;
+        let mut num = 0;
+        for (piece_type, board) in self.deref() {
+            num |= board.get_white_squares().get_bit_value(square) << (*piece_type as i64)
+                | board.get_black_squares().get_bit_value(square) << (*piece_type as i64 + 6)
+        }
         Piece::try_from_bitmap(index, num)
     }
 }
@@ -124,34 +124,24 @@ impl PieceBoard {
 }
 
 impl InnerBoard {
-    pub fn remove_piece(&mut self) {
-        //impl stuff
-    }
+    pub fn remove_piece(&mut self, pos: BoardPosition) {}
     pub fn get_all_occupied_squares(&self) -> BitMap64 {
-        self.pawns.get_occupied_squares()
-            | self.kings.get_occupied_squares()
-            | self.queen.get_occupied_squares()
-            | self.rook.get_occupied_squares()
-            | self.bishop.get_occupied_squares()
-            | self.knight.get_occupied_squares()
+        self.get_all_squares(|v| v.get_occupied_squares())
     }
 
     pub fn get_all_white_squares(&self) -> BitMap64 {
-        self.pawns.get_white_squares()
-            | self.kings.get_white_squares()
-            | self.queen.get_white_squares()
-            | self.rook.get_white_squares()
-            | self.bishop.get_white_squares()
-            | self.knight.get_white_squares()
+        self.get_all_squares(|v| v.get_white_squares())
     }
 
     pub fn get_all_black_squares(&self) -> BitMap64 {
-        self.pawns.get_black_squares()
-            | self.kings.get_black_squares()
-            | self.queen.get_black_squares()
-            | self.rook.get_black_squares()
-            | self.bishop.get_black_squares()
-            | self.knight.get_black_squares()
+        self.get_all_squares(|v| v.get_black_squares())
+    }
+
+    fn get_all_squares(&self, func: impl Fn(&PieceBoard) -> BitMap64) -> BitMap64 {
+        self.iter()
+            .map(|v| func(v.1))
+            .reduce(|acc, piece_board| (acc | piece_board))
+            .unwrap_or_default()
     }
 
     pub fn has(&self, square: u64) -> bool {

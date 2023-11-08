@@ -232,20 +232,20 @@ pub enum Color {
 pub struct Piece {
     pub color: Color,
     pub pos: Option<BoardPosition>,
-    type_of_piece: InnerPiece,
+    type_of_piece: PieceType,
 }
 #[derive(Debug, Clone, PartialEq, Copy)]
-pub enum InnerPiece {
-    Pawn,
-    Rook,
-    Knight,
-    Bishop,
-    King,
-    Queen,
+pub enum PieceType {
+    Pawn = 0,
+    Rook = 1,
+    Knight = 2,
+    Bishop = 3,
+    King = 4,
+    Queen = 5,
 }
 
 impl Piece {
-    pub fn new(color: Color, type_of_piece: InnerPiece) -> Piece {
+    pub fn new(color: Color, type_of_piece: PieceType) -> Piece {
         Piece {
             color,
             pos: None,
@@ -260,12 +260,12 @@ impl Piece {
         Self: Sized,
     {
         self.pos.map(|pos| match self.type_of_piece {
-            InnerPiece::Bishop => Bishop::get_movement_options(&pos, board, self),
-            InnerPiece::King => King::get_movement_options(&pos, board, self),
-            InnerPiece::Knight => Knight::get_movement_options(&pos, board, self),
-            InnerPiece::Pawn => Pawn::get_movement_options(&pos, board, self),
-            InnerPiece::Queen => Queen::get_movement_options(&pos, board, self),
-            InnerPiece::Rook => Rook::get_movement_options(&pos, board, self),
+            PieceType::Bishop => Bishop::get_movement_options(&pos, board, self),
+            PieceType::King => King::get_movement_options(&pos, board, self),
+            PieceType::Knight => Knight::get_movement_options(&pos, board, self),
+            PieceType::Pawn => Pawn::get_movement_options(&pos, board, self),
+            PieceType::Queen => Queen::get_movement_options(&pos, board, self),
+            PieceType::Rook => Rook::get_movement_options(&pos, board, self),
         })
     }
     pub fn try_from_bitmap(pos: BoardPosition, mut piece_type: i64) -> Option<Piece> {
@@ -280,12 +280,12 @@ impl Piece {
             },
             pos: Some(pos),
             type_of_piece: match piece_type {
-                0b1 => InnerPiece::Pawn,
-                0b1 => InnerPiece::Rook,
-                0b1 => InnerPiece::Knight,
-                0b1 => InnerPiece::Bishop,
-                0b1 => InnerPiece::King,
-                0b1 => InnerPiece::Queen,
+                0b1 => PieceType::Pawn,
+                0b1 => PieceType::Rook,
+                0b1 => PieceType::Knight,
+                0b1 => PieceType::Bishop,
+                0b1 => PieceType::King,
+                0b1 => PieceType::Queen,
                 e => return None,
             },
         })
@@ -294,12 +294,12 @@ impl Piece {
 impl Display for Piece {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.type_of_piece {
-            InnerPiece::Bishop => write!(f, " B "),
-            InnerPiece::King => write!(f, " K "),
-            InnerPiece::Knight => write!(f, " Kn"),
-            InnerPiece::Pawn => write!(f, " p "),
-            InnerPiece::Queen => write!(f, " Q "),
-            InnerPiece::Rook => write!(f, " R "),
+            PieceType::Bishop => write!(f, " B "),
+            PieceType::King => write!(f, " K "),
+            PieceType::Knight => write!(f, " Kn"),
+            PieceType::Pawn => write!(f, " p "),
+            PieceType::Queen => write!(f, " Q "),
+            PieceType::Rook => write!(f, " R "),
         }
     }
 }

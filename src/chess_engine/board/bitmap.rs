@@ -1,7 +1,12 @@
 use std::ops::*;
-#[derive(Debug, Clone,Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct BitMap64(i64);
 
+impl Default for BitMap64 {
+    fn default() -> Self {
+        Self(0)
+    }
+}
 impl BitMap64 {
     pub fn new(num: i64) -> BitMap64 {
         BitMap64(num)
@@ -33,20 +38,20 @@ impl Shr<i64> for BitMap64 {
         BitMap64(self.0 << rhs)
     }
 }
-impl ShrAssign<i64> for BitMap64{
+impl ShrAssign<i64> for BitMap64 {
     fn shr_assign(&mut self, rhs: i64) {
-        self.0=self.0 >> rhs
+        self.0 = self.0 >> rhs
     }
 }
-impl ShlAssign<i64> for BitMap64{
+impl ShlAssign<i64> for BitMap64 {
     fn shl_assign(&mut self, rhs: i64) {
-        self.0=self.0 >> rhs
+        self.0 = self.0 >> rhs
     }
 }
 impl Shl<i64> for BitMap64 {
     type Output = Self;
     fn shl(self, rhs: i64) -> Self::Output {
-        BitMap64( self.0 >> rhs)
+        BitMap64(self.0 >> rhs)
     }
 }
 impl BitAnd for BitMap64 {
@@ -116,4 +121,3 @@ impl BitXorAssign<i64> for BitMap64 {
         self.0 = self.0 ^ rhs
     }
 }
-
