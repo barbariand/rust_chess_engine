@@ -56,11 +56,10 @@ impl InnerBoard {
 }
 
 impl PieceBoard {
-    fn new_custom(white: i64, black: i64) -> PieceBoard<T> {
+    fn new_custom(white: i64, black: i64) -> PieceBoard {
         PieceBoard {
             white_piece: BitMap64::new(white),
             black_piece: BitMap64::new(black),
-            phantom: PhantomData::default(),
         }
     }
 }
