@@ -56,22 +56,10 @@ impl Action {
     pub fn execute(&self, board: &mut Board) {
         match self.inner_action {
             InnerAction::MoveTo => {
-                let mut moved = board[&self.piece_pos]
-                    .take()
-                    .expect("Unreatcheble beacuse allready checked why hacking");
-                moved.pos = Some(self.piece_pos);
-                board[&self.to_pos] = Some(moved)
+                todo!("not implemented")
             }
             InnerAction::Take => {
-                let mut piece = board[&self.to_pos]
-                    .take()
-                    .expect("Unreatcheble beacuse allready checked why hacking");
-                piece.pos = None;
-                let mut moved = board[&self.piece_pos]
-                    .take()
-                    .expect("Unreatcheble beacuse allready checked why hacking");
-                moved.pos = Some(self.piece_pos);
-                board[&self.to_pos] = Some(moved)
+                todo!("not implemented")
             }
         }
     }
@@ -248,12 +236,12 @@ pub struct Piece {
 }
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub enum InnerPiece {
+    Pawn,
+    Rook,
+    Knight,
     Bishop,
     King,
-    Knight,
-    Pawn,
-    Queen,
-    Rook,
+    Queen,   
 }
 
 impl Piece {
@@ -265,6 +253,7 @@ impl Piece {
         }
     }
 }
+
 impl Piece {
     pub fn get_movement_options(&self, board: &Board) -> Option<MovementOptions>
     where
@@ -278,6 +267,24 @@ impl Piece {
             InnerPiece::Queen => Queen::get_movement_options(&pos, board, self),
             InnerPiece::Rook => Rook::get_movement_options(&pos, board, self),
         })
+    }
+    pub fn try_from_bitmap(pos:BoardPosition,piece_type:i64)->Option<Piece>{
+        let is_black=piece_type>0b100000;
+        if is_black{
+            piece_type=piece_type>>6
+        }
+        Some(Self { color: match is_black{
+            false=>Color::White,
+            true=>Color::Black
+        }, pos:Some(pos), type_of_piece: match piece_type{
+            0b1=>InnerPiece::Pawn,
+            0b1=>InnerPiece::Rook,
+            0b1=>InnerPiece::Knight,
+            0b1=>InnerPiece::Bishop,
+            0b1=>InnerPiece::King,
+            0b1=>InnerPiece::Queen,
+            e=>return None
+        } })
     }
 }
 impl Display for Piece {

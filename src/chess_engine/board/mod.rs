@@ -3,6 +3,7 @@ mod board_position;
 mod file;
 mod rank;
 use std::ops::Mul;
+pub mod bitmap;
 
 pub use board::Board;
 pub use board_position::BoardPosition;

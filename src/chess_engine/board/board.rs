@@ -1,62 +1,230 @@
+use super::bitmap::BitMap64;
 use super::BoardPosition;
 use super::File;
 use super::Rank;
 use crate::chess_engine::history::History;
 use crate::chess_engine::pieces::Action;
+use crate::chess_engine::pieces::Bishop;
 use crate::chess_engine::pieces::Color;
 use crate::chess_engine::pieces::InnerPiece;
+use crate::chess_engine::pieces::King;
+use crate::chess_engine::pieces::Knight;
+use crate::chess_engine::pieces::Pawn;
 use crate::chess_engine::pieces::Piece;
+use crate::chess_engine::pieces::Queen;
+use crate::chess_engine::pieces::Rook;
 use std::fmt::Display;
+use std::marker::PhantomData;
 use std::ops::Index;
 use std::ops::IndexMut;
 
 #[derive(Debug, Clone)]
-pub struct BoardRank([Option<Piece>; 8]);
+struct InnerBoard {
+    pawns: PieceBoard<Pawn>,
+    kings: PieceBoard<King>,
+    queen: PieceBoard<Queen>,
+    rook: PieceBoard<Rook>,
+    bishop: PieceBoard<Bishop>,
+    knight: PieceBoard<Knight>,
+}
+#[derive(Debug, Clone)]
+struct PieceBoard<T> {
+    white_piece: BitMap64,
+    black_piece: BitMap64,
+    phantom: PhantomData<T>,
+}
+impl Default for InnerBoard {
+    fn default() -> Self {
+        InnerBoard {
+            pawns: PieceBoard::<Pawn>::new(),
+            rook: PieceBoard::<Rook>::new(),
+
+            knight: PieceBoard::<Knight>::new(),
+            bishop: PieceBoard::<Bishop>::new(),
+            kings: PieceBoard::<King>::new(),
+            queen: PieceBoard::<Queen>::new(),
+        }
+    }
+}
+
+impl Index<BoardPosition> for InnerBoard {
+    type Output = Option<Piece>;
+    fn index<'a>(&'a self, index: BoardPosition) -> &'a Self::Output {
+        let square = index.to_num();
+        let num=self.pawns.get_white_squares().get_bit_value(square) << 1
+            | self.rook.get_white_squares().get_bit_value(square) << 2
+            | self.knight.get_white_squares().get_bit_value(square) << 3
+            | self.bishop.get_white_squares().get_bit_value(square) << 4
+            | self.kings.get_white_squares().get_bit_value(square) << 5
+            | self.queen.get_white_squares().get_bit_value(square) << 6
+            | self.pawns.get_black_squares().get_bit_value(square) << 7
+            | self.rook.get_black_squares().get_bit_value(square) << 8
+            | self.knight.get_black_squares().get_bit_value(square) << 9
+            | self.bishop.get_black_squares().get_bit_value(square) << 10
+            | self.kings.get_black_squares().get_bit_value(square) << 11
+            | self.queen.get_black_squares().get_bit_value(square) << 12;
+        &'a Piece::try_from_bitmap(index,num)
+    }
+}
+
+
+impl<T> PieceBoard<T> {
+    fn new_custom(white: i64, black: i64) -> PieceBoard<T> {
+        PieceBoard {
+            white_piece: BitMap64::new(white),
+            black_piece: BitMap64::new(black),
+            phantom: PhantomData::default(),
+        }
+    }
+}
+impl<T> PieceBoard<T> {
+    fn remove_piece(&mut self, pos:&BoardPosition){
+        self.white_piece=self.white_piece^(0b1<<pos.to_num());
+        self.black_piece=self.black_piece^(0b1<<pos.to_num());
+    }
+    fn get_occupied_squares(&self) -> BitMap64 {
+        self.white_piece | self.black_piece
+    }
+
+    fn get_white_squares(&self) -> BitMap64 {
+        self.white_piece
+    }
+
+    fn get_black_squares(&self) -> BitMap64 {
+        self.black_piece
+    }
+
+    fn is_square_occupied(&self, square: u64) -> bool {
+        self.get_occupied_squares().contains(square)
+    }
+
+    fn is_white_piece_on_square(&self, square: u64) -> bool {
+        self.get_white_squares().contains(square)
+    }
+
+    fn is_black_piece_on_square(&self, square: u64) -> bool {
+        self.get_black_squares().contains(square)
+    }
+
+    fn count_pieces(&self) -> u8 {
+        self.get_occupied_squares().count_ones()
+    }
+
+    fn count_white_pieces(&self) -> u8 {
+        self.get_white_squares().count_ones()
+    }
+
+    fn count_black_pieces(&self) -> u8 {
+        self.get_black_squares().count_ones()
+    }
+}
+
+impl PieceBoard<Pawn> {
+    fn new() -> PieceBoard<Pawn> {
+        PieceBoard::new_custom(0b11111111 << 56, 0b11111111 << 8)
+    }
+}
+impl PieceBoard<King> {
+    fn new() -> PieceBoard<King> {
+        PieceBoard::new_custom(0b1 << 60, 0b1 << 5)
+    }
+}
+impl PieceBoard<Bishop> {
+    fn new() -> PieceBoard<Bishop> {
+        PieceBoard::new_custom(0b00100100 << 56, 0b00100100 << 8)
+    }
+}
+impl PieceBoard<Knight> {
+    fn new() -> PieceBoard<Knight> {
+        PieceBoard::new_custom(0b01000010 << 56, 0b01000010 << 8)
+    }
+}
+impl PieceBoard<Rook> {
+    fn new() -> PieceBoard<Rook> {
+        PieceBoard::new_custom(0b10000001 << 56, 0b10000001 << 8)
+    }
+}
+impl PieceBoard<Queen> {
+    fn new() -> PieceBoard<Queen> {
+        PieceBoard::new_custom(0b1 << 59, 0b1 << 4)
+    }
+}
+impl InnerBoard {
+    pub fn remove_piece(&mut self, ){
+        //impl stuff
+    }
+    pub fn get_all_occupied_squares(&self) -> BitMap64 {
+        self.pawns.get_occupied_squares()
+            | self.kings.get_occupied_squares()
+            | self.queen.get_occupied_squares()
+            | self.rook.get_occupied_squares()
+            | self.bishop.get_occupied_squares()
+            | self.knight.get_occupied_squares()
+    }
+
+    pub fn get_all_white_squares(&self) -> BitMap64 {
+        self.pawns.get_white_squares()
+            | self.kings.get_white_squares()
+            | self.queen.get_white_squares()
+            | self.rook.get_white_squares()
+            | self.bishop.get_white_squares()
+            | self.knight.get_white_squares()
+    }
+
+    pub fn get_all_black_squares(&self) -> BitMap64 {
+        self.pawns.get_black_squares()
+            | self.kings.get_black_squares()
+            | self.queen.get_black_squares()
+            | self.rook.get_black_squares()
+            | self.bishop.get_black_squares()
+            | self.knight.get_black_squares()
+    }
+
+    pub fn has(&self, square: u64) -> bool {
+        self.get_all_occupied_squares().contains(square)
+    }
+
+    pub fn has_white(&self, square: u64) -> bool {
+        self.get_all_white_squares().contains(square)
+    }
+
+    pub fn has_black(&self, square: u64) -> bool {
+        self.get_all_black_squares().contains(square)
+    }
+
+    fn count_all_pieces(&self) -> u8 {
+        self.get_all_occupied_squares().count_ones()
+    }
+
+    fn count_all_white_pieces(&self) -> u8 {
+        self.get_all_white_squares().count_ones()
+    }
+
+    fn count_all_black_pieces(&self) -> u8 {
+        self.get_all_black_squares().count_ones()
+    }
+}
 #[derive(Debug, Clone)]
 pub struct Board {
-    inner_board: [BoardRank; 8],
+    inner_board: InnerBoard,
     turn: Color,
     history: History,
 }
 
 impl Board {
-    pub fn has_piece(&self, pos: &BoardPosition) -> bool {
-        self[&pos.rank][&pos.file].is_some()
+    pub fn has_piece(&self,pos:&BoardPosition)->bool{
+        self.inner_board.get_all_occupied_squares().contains(pos.to_num())
     }
     pub fn is_piece_color(&self, pos: &BoardPosition, color: Color) -> bool {
-        self[&pos.rank][&pos.file].is_some_and(|p| p.color == color)
+        match color {
+            Color::White => self.inner_board.get_all_white_squares(),
+            Color::Black => self.inner_board.get_all_white_squares(),
+        }
+        .contains(pos.to_num())
     }
     pub fn new() -> Board {
         Board {
-            inner_board: [
-                [
-                    Some(Piece::new(Color::Black, InnerPiece::Rook)),
-                    Some(Piece::new(Color::Black, InnerPiece::Knight)),
-                    Some(Piece::new(Color::Black, InnerPiece::Bishop)),
-                    Some(Piece::new(Color::Black, InnerPiece::Queen)),
-                    Some(Piece::new(Color::Black, InnerPiece::King)),
-                    Some(Piece::new(Color::Black, InnerPiece::Rook)),
-                    Some(Piece::new(Color::Black, InnerPiece::Knight)),
-                    Some(Piece::new(Color::Black, InnerPiece::Bishop)),
-                ],
-                [Some(Piece::new(Color::Black, InnerPiece::Pawn)); 8],
-                [None; 8],
-                [None; 8],
-                [None; 8],
-                [None; 8],
-                [Some(Piece::new(Color::White, InnerPiece::Pawn)); 8],
-                [
-                    Some(Piece::new(Color::White, InnerPiece::Knight)),
-                    Some(Piece::new(Color::White, InnerPiece::Rook)),
-                    Some(Piece::new(Color::White, InnerPiece::Bishop)),
-                    Some(Piece::new(Color::White, InnerPiece::Queen)),
-                    Some(Piece::new(Color::White, InnerPiece::King)),
-                    Some(Piece::new(Color::White, InnerPiece::Rook)),
-                    Some(Piece::new(Color::White, InnerPiece::Knight)),
-                    Some(Piece::new(Color::White, InnerPiece::Bishop)),
-                ],
-            ]
-            .map(|v| BoardRank(v)),
+            inner_board: Default::default(),
             turn: Color::White,
             history: History(Vec::new()),
         }
@@ -66,96 +234,11 @@ impl Board {
         self.history.add(action);
     }
     pub fn get_movement_options() {}
-    pub fn into_iter(&self) -> Box<dyn Iterator<Item = Piece> + '_> {
-        Box::new(
-            self.inner_board
-                .iter()
-                .map(|a| a.0.into_iter().flatten().collect::<Vec<Piece>>())
-                .flatten(),
-        )
-    }
-}
-impl IndexMut<&Rank> for Board {
-    fn index_mut(&mut self, index: &Rank) -> &mut Self::Output {
-        self.inner_board
-            .get_mut(<&Rank as Into<i8>>::into(index) as usize)
-            .expect("Rank is bigger than board")
-    }
-}
-impl IndexMut<&BoardPosition> for Board {
-    fn index_mut(&mut self, index: &BoardPosition) -> &mut Self::Output {
-        &mut self[&index.rank][&index.file]
-    }
-}
-impl Index<&Rank> for Board {
-    type Output = BoardRank;
-    fn index(&self, index: &Rank) -> &Self::Output {
-        self.inner_board
-            .get(<&Rank as Into<i8>>::into(index) as usize)
-            .expect("Rank is bigger than board")
-    }
-}
-impl Index<&File> for BoardRank {
-    type Output = Option<Piece>;
-    fn index(&self, index: &File) -> &Self::Output {
-        self.0
-            .get(<&File as Into<i8>>::into(index) as usize)
-            .expect("File is bigger than board")
-    }
-}
-impl IndexMut<File> for BoardRank {
-    fn index_mut(&mut self, index: File) -> &mut Self::Output {
-        self.0
-            .get_mut(<File as Into<i8>>::into(index) as usize)
-            .expect("File is bigger than board")
-    }
-}
-impl IndexMut<&File> for BoardRank {
-    fn index_mut(&mut self, index: &File) -> &mut Self::Output {
-        self.0
-            .get_mut(<&File as Into<i8>>::into(index) as usize)
-            .expect("File is bigger than board")
-    }
-}
-impl Index<Rank> for Board {
-    type Output = BoardRank;
-    fn index(&self, index: Rank) -> &Self::Output {
-        self.inner_board
-            .get(<Rank as Into<i8>>::into(index) as usize)
-            .expect("Rank is bigger than board")
-    }
-}
-impl Index<File> for BoardRank {
-    type Output = Option<Piece>;
-    fn index(&self, index: File) -> &Self::Output {
-        self.0
-            .get(<File as Into<i8>>::into(index) as usize)
-            .expect("File is bigger than board")
-    }
-}
-impl Index<&BoardPosition> for Board {
-    type Output = Option<Piece>;
-    fn index(&self, index: &BoardPosition) -> &Self::Output {
-        &self[index.rank][index.file]
-    }
 }
 
 impl Display for Board {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for rank in &self.inner_board {
-            writeln!(f, "{}", rank)?;
-        }
-        Ok(())
-    }
-}
-impl Display for BoardRank {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for piece in self.0 {
-            match piece {
-                Some(s) => write!(f, "{: ^15}|", s)?,
-                None => write!(f, "{:>3}|", " ")?,
-            }
-        }
+        
         Ok(())
     }
 }

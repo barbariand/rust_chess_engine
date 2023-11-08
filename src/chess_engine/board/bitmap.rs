@@ -1,0 +1,111 @@
+use std::ops::*;
+#[derive(Debug, Clone,Copy)]
+pub struct BitMap64(i64);
+
+impl BitMap64 {
+    pub fn new(num: i64) -> BitMap64 {
+        BitMap64(num)
+    }
+    fn set_bit(&mut self, bit: u64) {
+        self.0 |= 1 << bit;
+    }
+
+    fn clear_bit(&mut self, bit: u64) {
+        self.0 &= !(1 << bit);
+    }
+
+    pub fn get_bit(&self, bit: u64) -> bool {
+        (self.0 & (1 << bit)) != 0
+    }
+    pub fn get_bit_value(&self, bit: u64) -> i64 {
+        (self.0 & (1 << bit)) >> bit
+    }
+    pub fn contains(&self, bit: u64) -> bool {
+        self.get_bit(bit)
+    }
+    pub fn count_ones(&self) -> u8 {
+        self.0.count_ones() as u8
+    }
+}
+impl Shr<i64> for BitMap64 {
+    type Output = Self;
+    fn shr(self, rhs: i64) -> Self::Output {
+        self.0 = self.0 << rhs;
+        self
+    }
+}
+impl Shl<i64> for BitMap64 {
+    type Output = Self;
+    fn shl(self, rhs: i64) -> Self::Output {
+        self.0 = self.0 >> rhs;
+        self
+    }
+}
+impl BitAnd for BitMap64 {
+    type Output = Self;
+    fn bitand(self, rhs: Self) -> Self::Output {
+        BitMap64(self.0 & rhs.0)
+    }
+}
+impl BitAndAssign for BitMap64 {
+    fn bitand_assign(&mut self, rhs: Self) {
+        self.0 = self.0 & rhs.0
+    }
+}
+impl BitOr for BitMap64 {
+    type Output = Self;
+    fn bitor(self, rhs: Self) -> Self::Output {
+        BitMap64(self.0 | rhs.0)
+    }
+}
+impl BitOrAssign for BitMap64 {
+    fn bitor_assign(&mut self, rhs: Self) {
+        self.0 = self.0 | rhs.0
+    }
+}
+impl BitXor for BitMap64 {
+    type Output = Self;
+    fn bitxor(self, rhs: Self) -> Self::Output {
+        BitMap64(self.0 ^ rhs.0)
+    }
+}
+impl BitXorAssign for BitMap64 {
+    fn bitxor_assign(&mut self, rhs: Self) {
+        self.0 = self.0 ^ rhs.0
+    }
+}
+
+impl BitAnd<i64> for BitMap64 {
+    type Output = Self;
+    fn bitand(self, rhs: i64) -> Self::Output {
+        BitMap64(self.0 & rhs)
+    }
+}
+impl BitAndAssign<i64> for BitMap64 {
+    fn bitand_assign(&mut self, rhs: i64) {
+        self.0 = self.0 & rhs
+    }
+}
+impl BitOr<i64> for BitMap64 {
+    type Output = Self;
+    fn bitor(self, rhs: i64) -> Self::Output {
+        BitMap64(self.0 | rhs)
+    }
+}
+impl BitOrAssign<i64> for BitMap64 {
+    fn bitor_assign(&mut self, rhs: i64) {
+        self.0 = self.0 | rhs
+    }
+}
+impl BitXor<i64> for BitMap64 {
+    type Output = Self;
+    fn bitxor(self, rhs: i64) -> Self::Output {
+        BitMap64(self.0 ^ rhs)
+    }
+}
+impl BitXorAssign<i64> for BitMap64 {
+    fn bitxor_assign(&mut self, rhs: i64) {
+        self.0 = self.0 ^ rhs
+    }
+}
+

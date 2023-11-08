@@ -13,8 +13,8 @@ impl BoardPosition {
     pub fn new(file: File, rank: Rank) -> Self {
         BoardPosition { file, rank }
     }
-    pub fn to_num(&self) -> usize {
-        (self.rank as u8 + self.file as u8) as usize
+    pub fn to_num(&self) -> u64 {
+        self.rank as u64 * 8 as u64 + self.file as u64
     }
 }
 impl Add<MoveOffset> for BoardPosition {

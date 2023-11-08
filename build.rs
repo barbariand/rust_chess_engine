@@ -6,37 +6,37 @@ fn main() {
     let mut generated_str = String::from("pub static king_moves_bitmask: [u64; 64] = [");
     for i in 0..64 {
         //king
-        generated_str += &format!("{},", king_moves_bitmask(i));
+        generated_str += &format!("0b{:064b},", king_moves_bitmask(i));
     }
     generated_str += "];";
     generated_str += "pub static knight_moves_bitmask: [u64; 64] = [";
     for i in 0..64 {
         //king
-        generated_str += &format!("{},", knight_moves_bitmask(i));
+        generated_str += &format!("0b{:064b},", knight_moves_bitmask(i));
     }
     generated_str += "];";
     generated_str += "pub static rook_moves_bitmask: [u64; 64] = [";
     for i in 0..64 {
         //king
-        generated_str += &format!("{},", rook_moves_bitmask(i));
+        generated_str += &format!("0b{:064b},", rook_moves_bitmask(i));
     }
     generated_str += "];";
     generated_str += "pub static bishop_moves_bitmask: [u64; 64] = [";
     for i in 0..64 {
         //king
-        generated_str += &format!("{},", bishop_moves_bitmask(i));
+        generated_str += &format!("0b{:064b},", bishop_moves_bitmask(i));
     }
     generated_str += "];";
     generated_str += "pub static queen_moves_bitmask: [u64; 64] = [";
     for i in 0..64 {
         //king
-        generated_str += &format!("{},", queen_moves_bitmask(i));
+        generated_str += &format!("0b{:064b},", queen_moves_bitmask(i));
     }
     generated_str += "];";
     generated_str += "pub static white_pawn_moves: [(u64,u64); 64] = [";
     for i in 0..56 {
         let a = white_pawn_moves(i);
-        generated_str += &format!("({},{}),", a.0, a.1);
+        generated_str += &format!("(0b{:064b},0b{:064b}),", a.0, a.1);
     }
     for _ in 0..8 {
         generated_str += "(0,0),"
