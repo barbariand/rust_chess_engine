@@ -22,23 +22,61 @@ use std::ops::IndexMut;
 
 #[derive(Debug, Clone)]
 struct InnerBoard {
-    pieces: HashMap<PieceType, PieceBoard>,
+    pieces: PieceBoards,
 }
-#[derive(Debug, Clone)]
+type PieceBoards = [(PieceType,PieceBoard); 6];
+#[derive(Debug, Clone, Copy)]
 struct PieceBoard {
     white_piece: BitMap64,
     black_piece: BitMap64,
 }
 impl Default for InnerBoard {
     fn default() -> Self {
+        use PieceType as PT;
+        let kings = PieceBoard::new_king();
+        let queens = PieceBoard::new_queen();
+        let bishops = PieceBoard::new_bishop();
+        let rooks = PieceBoard::new_rook();
+        let knights = PieceBoard::new_knight();
+        let pawns = PieceBoard::new_pawn();
         InnerBoard {
-            pieces: HashMap::new(),
+            pieces: [(PT::Pawn,pawns), (PT::Rook,rooks), (PT::Knight,knights), (PT::Bishop,bishops), (PT::King,kings), (PT::Queen,queens)],
         }
     }
 }
+/* impl<'a> IntoIterator for &'a InnerBoard{
+    type Item=PieceBoard;
+    type IntoIter =PieceBoarIterator<'a>;
+    fn into_iter(self) -> Self::IntoIter {
+        PieceBoarIterator {
+            pieces: self,
+            index: 0,
+        }
+    }
+}
+struct PieceBoarIterator<'a>{
+    pieces:&'a PieceBoards,
+    index:usize,
+}
+impl<'a> Iterator for PieceBoarIterator<'a>{
+    type Item=PieceBoard;
+    fn next(&mut self) -> Option<Self::Item> {
+        let result = match self.index {
+            0 => self.pieces.0,
+            1 => self.pieces.1,
+            2 => self.pieces.2,
+            3 => self.pieces.3,
+            4 => self.pieces.4,
+            5 => self.pieces.5,
+            6 => self.pieces.6,
+            _ => return None,
+        };
+        self.index += 1;
+        Some(result)
+    }
+} */
 impl Deref for InnerBoard {
-    type Target = HashMap<PieceType, PieceBoard>;
-
+    type Target = PieceBoards;
     fn deref(&self) -> &Self::Target {
         &self.pieces
     }
@@ -62,14 +100,19 @@ impl PieceBoard {
             black_piece: BitMap64::new(black),
         }
     }
-}
-impl PieceBoard {
     fn remove_piece(&mut self, pos: &BoardPosition) {
-        self.white_piece = self.white_piece ^ (0b1 << pos.to_num());
-        self.black_piece = self.black_piece ^ (0b1 << pos.to_num());
+        self.white_piece.clear_bit(pos.to_num());
+        self.black_piece.clear_bit(pos.to_num());
+    }
+    fn insert(&mut self, pos: &BoardPosition, color: Color) {
+        match color {
+            Color::White => self.white_piece,
+            Color::Black => self.black_piece,
+        }
+        .set_bit(pos.to_num())
     }
     fn get_occupied_squares(&self) -> BitMap64 {
-        self.white_piece | self.black_piece
+        self.white_piece | &self.black_piece
     }
 
     fn get_white_squares(&self) -> BitMap64 {
@@ -124,7 +167,9 @@ impl PieceBoard {
 }
 
 impl InnerBoard {
-    pub fn remove_piece(&mut self, pos: BoardPosition) {}
+    pub fn remove_piece(&mut self, piece: PieceType, pos: BoardPosition) {
+    
+    }
     pub fn get_all_occupied_squares(&self) -> BitMap64 {
         self.get_all_squares(|v| v.get_occupied_squares())
     }
@@ -139,7 +184,7 @@ impl InnerBoard {
 
     fn get_all_squares(&self, func: impl Fn(&PieceBoard) -> BitMap64) -> BitMap64 {
         self.iter()
-            .map(|v| func(v.1))
+            .map(|v| func(&v.1))
             .reduce(|acc, piece_board| (acc | piece_board))
             .unwrap_or_default()
     }

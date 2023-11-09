@@ -234,7 +234,7 @@ pub struct Piece {
     pub pos: Option<BoardPosition>,
     type_of_piece: PieceType,
 }
-#[derive(Debug, Clone, PartialEq, Copy)]
+#[derive(Debug, Clone, PartialEq, Copy,Eq,Hash)]
 pub enum PieceType {
     Pawn = 0,
     Rook = 1,
