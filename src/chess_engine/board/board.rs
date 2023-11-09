@@ -19,6 +19,7 @@ use std::marker::PhantomData;
 use std::ops::Deref;
 use std::ops::Index;
 use std::ops::IndexMut;
+use crate::chess_engine::errors::*;
 
 #[derive(Debug, Clone)]
 struct InnerBoard {
@@ -100,19 +101,46 @@ impl PieceBoard {
             black_piece: BitMap64::new(black),
         }
     }
-    fn remove_piece(&mut self, pos: &BoardPosition) {
-        self.white_piece.clear_bit(pos.to_num());
-        self.black_piece.clear_bit(pos.to_num());
+    fn remove_piece_unchecked_with_color(&mut self, pos: &BoardPosition, color: Color) {
+        
+        match color {
+            Color::White => self.white_piece,
+            Color::Black => self.black_piece,
+        }
+        .clear_bit(pos.to_num())
     }
-    fn insert(&mut self, pos: &BoardPosition, color: Color) {
+    fn insert_unchecked_with_color(&mut self, pos: &BoardPosition, color: Color) {
         match color {
             Color::White => self.white_piece,
             Color::Black => self.black_piece,
         }
         .set_bit(pos.to_num())
     }
+    fn move_piece_unchecked(&mut self,color:Color,from:&BoardPosition,to:&BoardPosition){
+    let mut pieces=match color {
+        Color::White => self.white_piece,
+        Color::Black => self.black_piece,
+    };
+    pieces.clear_bit(from.to_num());
+    pieces.set_bit(to.to_num());
+    }
+    
+    
+    pub fn move_piece(&mut self,color:Color,from:&BoardPosition,to:&BoardPosition)->Result<(),Error>{
+        match (!self.is_square_occupied(from),self.is_square_occupied(to)){
+            (false,false)=>{
+                self.move_piece_unchecked(color,from,to);
+                Ok(())
+            }
+            (true,_)=>{
+                Err(Error::Board(BoardError::PieceMissing))
+            }
+            (_,true)=>Err(Error::Board(BoardError::PieceWhereMoving))
+        }
+    }
+
     fn get_occupied_squares(&self) -> BitMap64 {
-        self.white_piece | &self.black_piece
+        self.white_piece | self.black_piece
     }
 
     fn get_white_squares(&self) -> BitMap64 {
@@ -123,16 +151,22 @@ impl PieceBoard {
         self.black_piece
     }
 
-    fn is_square_occupied(&self, square: u64) -> bool {
-        self.get_occupied_squares().contains(square)
+    fn is_square_occupied(&self, pos: &BoardPosition) -> bool {
+        self.get_occupied_squares().contains(pos.into())
+    }
+    fn is_square_occupied_color(&self,pos:&BoardPosition,color:Color)->bool{
+        match color {
+            Color::White => self.white_piece,
+            Color::Black => self.black_piece,
+        }.contains(pos.to_num())
     }
 
-    fn is_white_piece_on_square(&self, square: u64) -> bool {
-        self.get_white_squares().contains(square)
+    fn is_white_piece_on_square(&self, pos: &BoardPosition) -> bool {
+        self.get_white_squares().contains(pos.to_num())
     }
 
-    fn is_black_piece_on_square(&self, square: u64) -> bool {
-        self.get_black_squares().contains(square)
+    fn is_black_piece_on_square(&self, pos: &BoardPosition) -> bool {
+        self.get_black_squares().contains(pos.to_num())
     }
 
     fn count_pieces(&self) -> u8 {

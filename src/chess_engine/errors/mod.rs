@@ -3,12 +3,18 @@ use std::{error::Error as StdError, fmt::Display};
 #[derive(Debug)]
 pub enum Error{
     Action(ActionError),
-    BoardPosition(BoardPositionError)
+    BoardPosition(BoardPositionError),
+    Board(BoardError)
 }
 #[derive(Debug)]
 pub enum ActionError{
     PieceNotInPlay,
     SameColor
+}
+#[derive(Debug)]
+pub enum BoardError{
+    PieceMissing,
+    PieceWhereMoving
 }
 #[derive(Debug)]
 pub enum BoardPositionError{
