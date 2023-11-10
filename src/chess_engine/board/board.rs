@@ -25,11 +25,74 @@ use std::ops::IndexMut;
 struct InnerBoard {
     pieces: PieceBoards,
 }
-type PieceBoards = [(PieceType, PieceBoard); 6];
-#[derive(Debug, Clone, Copy)]
-struct PieceBoard {
-    white_piece: BitMap64,
-    black_piece: BitMap64,
+impl InnerBoard {
+    pub fn remove_piece(&mut self, piece: PieceType, pos: &BoardPosition) {
+        self[piece].remove_piece(pos)
+    }
+    pub fn move_piece(
+        &mut self,
+        color: Color,
+        from: &BoardPosition,
+        piece: PieceType,
+        to: &BoardPosition,
+    ) -> Result<(), Error> {
+        self[piece].move_piece(color, from, to)
+    }
+    pub fn take_piece(
+        &mut self,
+        color: Color,
+        from: &BoardPosition,
+        piece: PieceType,
+        to: &BoardPosition,
+    ) -> Result<(), Error> {
+        let mut board = self[piece];
+        board.remove_piece_with_color(to, !color);
+        let res = board.move_piece(color, from, to);
+        self[piece] = board;
+        res
+    }
+    pub fn get_all_occupied_squares(&self) -> BitMap64 {
+        self.get_all_squares(|v| v.get_occupied_squares())
+    }
+
+    pub fn get_all_white_squares(&self) -> BitMap64 {
+        self.get_all_squares(|v| v.get_white_squares())
+    }
+
+    pub fn get_all_black_squares(&self) -> BitMap64 {
+        self.get_all_squares(|v| v.get_black_squares())
+    }
+
+    fn get_all_squares(&self, func: impl Fn(&PieceBoard) -> BitMap64) -> BitMap64 {
+        self.iter()
+            .map(|v| func(&v.1))
+            .reduce(|acc, piece_board| (acc | piece_board))
+            .unwrap_or_default()
+    }
+
+    pub fn has(&self, square: u64) -> bool {
+        self.get_all_occupied_squares().contains(square)
+    }
+
+    pub fn has_white(&self, square: u64) -> bool {
+        self.get_all_white_squares().contains(square)
+    }
+
+    pub fn has_black(&self, square: u64) -> bool {
+        self.get_all_black_squares().contains(square)
+    }
+
+    fn count_all_pieces(&self) -> u8 {
+        self.get_all_occupied_squares().count_ones()
+    }
+
+    fn count_all_white_pieces(&self) -> u8 {
+        self.get_all_white_squares().count_ones()
+    }
+
+    fn count_all_black_pieces(&self) -> u8 {
+        self.get_all_black_squares().count_ones()
+    }
 }
 impl Default for InnerBoard {
     fn default() -> Self {
@@ -55,12 +118,19 @@ impl Default for InnerBoard {
 impl Index<PieceType> for InnerBoard {
     type Output = PieceBoard;
     fn index(&self, index: PieceType) -> &Self::Output {
-        &self.get(index as usize).expect("This bounds should never be violated, check the enum values").1
+        &self
+            .get(index as usize)
+            .expect("This bounds should never be violated, check the enum values")
+            .1
     }
 }
 impl IndexMut<PieceType> for InnerBoard {
     fn index_mut(&mut self, index: PieceType) -> &mut Self::Output {
-        &mut self.pieces.get_mut(index as usize).expect("This bounds should never be violated, check the enum values").1
+        &mut self
+            .pieces
+            .get_mut(index as usize)
+            .expect("This bounds should never be violated, check the enum values")
+            .1
     }
 }
 impl Deref for InnerBoard {
@@ -81,6 +151,13 @@ impl InnerBoard {
     }
 }
 
+type PieceBoards = [(PieceType, PieceBoard); 6];
+
+#[derive(Debug, Clone, Copy)]
+struct PieceBoard {
+    white_piece: BitMap64,
+    black_piece: BitMap64,
+}
 impl PieceBoard {
     fn new_custom(white: i64, black: i64) -> PieceBoard {
         PieceBoard {
@@ -95,7 +172,7 @@ impl PieceBoard {
         }
         .clear_bit(pos.to_num())
     }
-    fn remove_piece(&mut self, pos: &BoardPosition){
+    fn remove_piece(&mut self, pos: &BoardPosition) {
         self.white_piece.clear_bit(pos.to_num());
         self.black_piece.clear_bit(pos.to_num());
     }
@@ -193,78 +270,12 @@ impl PieceBoard {
     }
 }
 
-impl InnerBoard {
-    pub fn remove_piece(&mut self, piece: PieceType, pos: &BoardPosition) {
-        self[piece].remove_piece(pos)
-    }
-    pub fn move_piece(&mut self,
-        color: Color,
-        from: &BoardPosition,
-        piece: PieceType,
-        to: &BoardPosition,)->Result<(),Error>{
-            self[piece].move_piece(color,from,to)
-        }
-        pub fn take_piece(&mut self,
-            color: Color,
-            from: &BoardPosition,
-            piece: PieceType,
-            to: &BoardPosition,)->Result<(),Error>{
-                let mut board=self[piece];
-                board.remove_piece_with_color(to,!color);
-                let res=board.move_piece(color,from,to);
-                self[piece]=board;
-                res
-            }
-    pub fn get_all_occupied_squares(&self) -> BitMap64 {
-        self.get_all_squares(|v| v.get_occupied_squares())
-    }
-
-    pub fn get_all_white_squares(&self) -> BitMap64 {
-        self.get_all_squares(|v| v.get_white_squares())
-    }
-
-    pub fn get_all_black_squares(&self) -> BitMap64 {
-        self.get_all_squares(|v| v.get_black_squares())
-    }
-
-    fn get_all_squares(&self, func: impl Fn(&PieceBoard) -> BitMap64) -> BitMap64 {
-        self.iter()
-            .map(|v| func(&v.1))
-            .reduce(|acc, piece_board| (acc | piece_board))
-            .unwrap_or_default()
-    }
-
-    pub fn has(&self, square: u64) -> bool {
-        self.get_all_occupied_squares().contains(square)
-    }
-
-    pub fn has_white(&self, square: u64) -> bool {
-        self.get_all_white_squares().contains(square)
-    }
-
-    pub fn has_black(&self, square: u64) -> bool {
-        self.get_all_black_squares().contains(square)
-    }
-
-    fn count_all_pieces(&self) -> u8 {
-        self.get_all_occupied_squares().count_ones()
-    }
-
-    fn count_all_white_pieces(&self) -> u8 {
-        self.get_all_white_squares().count_ones()
-    }
-
-    fn count_all_black_pieces(&self) -> u8 {
-        self.get_all_black_squares().count_ones()
-    }
-}
 #[derive(Debug, Clone)]
 pub struct Board {
     inner_board: InnerBoard,
     turn: Color,
     history: History,
 }
-
 impl Board {
     pub fn has_piece(&self, pos: &BoardPosition) -> bool {
         self.inner_board
@@ -291,7 +302,6 @@ impl Board {
     }
     pub fn get_movement_options() {}
 }
-
 impl Display for Board {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         Ok(())
