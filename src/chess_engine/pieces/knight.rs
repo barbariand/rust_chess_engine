@@ -1,8 +1,8 @@
 use crate::chess_engine::board::{Board, MoveOffset};
 
 use super::{
-    BoardPosition, BoardWalker, InnerAction, MovablePiece, MovementDirection, MovementOptions,
-    Piece, PieceMovement, PieceStep,
+    BoardPosition, InnerAction, MovablePiece, MovementDirection, MovementOptions, Piece,
+    PieceMovement, PieceStep,
 };
 #[derive(Debug, Clone)]
 pub struct Knight;

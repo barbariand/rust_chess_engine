@@ -228,13 +228,22 @@ pub enum Color {
     Black,
     White,
 }
+impl std::ops::Not for Color{
+    type Output = Self;
+    fn not(self)->Self::Output{
+        match self{
+            Color::Black=>Color::White,
+            Color::White=>Color::Black,
+        }
+    }
+}
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub struct Piece {
     pub color: Color,
     pub pos: Option<BoardPosition>,
     type_of_piece: PieceType,
 }
-#[derive(Debug, Clone, PartialEq, Copy,Eq,Hash)]
+#[derive(Debug, Clone, PartialEq, Copy, Eq, Hash)]
 pub enum PieceType {
     Pawn = 0,
     Rook = 1,
@@ -281,12 +290,12 @@ impl Piece {
             pos: Some(pos),
             type_of_piece: match piece_type {
                 0b1 => PieceType::Pawn,
-                0b1 => PieceType::Rook,
-                0b1 => PieceType::Knight,
-                0b1 => PieceType::Bishop,
-                0b1 => PieceType::King,
-                0b1 => PieceType::Queen,
-                e => return None,
+                0b10 => PieceType::Rook,
+                0b100 => PieceType::Knight,
+                0b1000 => PieceType::Bishop,
+                0b10000 => PieceType::King,
+                0b100000 => PieceType::Queen,
+                _e => return None,
             },
         })
     }
@@ -336,7 +345,7 @@ impl<'a> Iterator for BoardWalker<'a> {
                 PieceStep::Full(direction) => direction.into(),
             };
 
-            let new_pos = (self.pos.clone() + changer).ok()?;
+            let new_pos = (self.pos + changer).ok()?;
             self.pos = new_pos;
         }
         Action::new(self.piece, self.board, self.pos).ok()

@@ -2,6 +2,7 @@ use super::bitmap::BitMap64;
 use super::BoardPosition;
 use super::File;
 use super::Rank;
+use crate::chess_engine::errors::*;
 use crate::chess_engine::history::History;
 use crate::chess_engine::pieces::Action;
 use crate::chess_engine::pieces::Bishop;
@@ -19,13 +20,12 @@ use std::marker::PhantomData;
 use std::ops::Deref;
 use std::ops::Index;
 use std::ops::IndexMut;
-use crate::chess_engine::errors::*;
 
 #[derive(Debug, Clone)]
 struct InnerBoard {
     pieces: PieceBoards,
 }
-type PieceBoards = [(PieceType,PieceBoard); 6];
+type PieceBoards = [(PieceType, PieceBoard); 6];
 #[derive(Debug, Clone, Copy)]
 struct PieceBoard {
     white_piece: BitMap64,
@@ -41,41 +41,28 @@ impl Default for InnerBoard {
         let knights = PieceBoard::new_knight();
         let pawns = PieceBoard::new_pawn();
         InnerBoard {
-            pieces: [(PT::Pawn,pawns), (PT::Rook,rooks), (PT::Knight,knights), (PT::Bishop,bishops), (PT::King,kings), (PT::Queen,queens)],
+            pieces: [
+                (PT::Pawn, pawns),
+                (PT::Rook, rooks),
+                (PT::Knight, knights),
+                (PT::Bishop, bishops),
+                (PT::King, kings),
+                (PT::Queen, queens),
+            ],
         }
     }
 }
-/* impl<'a> IntoIterator for &'a InnerBoard{
-    type Item=PieceBoard;
-    type IntoIter =PieceBoarIterator<'a>;
-    fn into_iter(self) -> Self::IntoIter {
-        PieceBoarIterator {
-            pieces: self,
-            index: 0,
-        }
+impl Index<PieceType> for InnerBoard {
+    type Output = PieceBoard;
+    fn index(&self, index: PieceType) -> &Self::Output {
+        &self.get(index as usize).expect("This bounds should never be violated, check the enum values").1
     }
 }
-struct PieceBoarIterator<'a>{
-    pieces:&'a PieceBoards,
-    index:usize,
-}
-impl<'a> Iterator for PieceBoarIterator<'a>{
-    type Item=PieceBoard;
-    fn next(&mut self) -> Option<Self::Item> {
-        let result = match self.index {
-            0 => self.pieces.0,
-            1 => self.pieces.1,
-            2 => self.pieces.2,
-            3 => self.pieces.3,
-            4 => self.pieces.4,
-            5 => self.pieces.5,
-            6 => self.pieces.6,
-            _ => return None,
-        };
-        self.index += 1;
-        Some(result)
+impl IndexMut<PieceType> for InnerBoard {
+    fn index_mut(&mut self, index: PieceType) -> &mut Self::Output {
+        &mut self.pieces.get_mut(index as usize).expect("This bounds should never be violated, check the enum values").1
     }
-} */
+}
 impl Deref for InnerBoard {
     type Target = PieceBoards;
     fn deref(&self) -> &Self::Target {
@@ -83,7 +70,7 @@ impl Deref for InnerBoard {
     }
 }
 impl InnerBoard {
-    fn get(&self, index: BoardPosition) -> Option<Piece> {
+    fn get_piece(&self, index: BoardPosition) -> Option<Piece> {
         let square = index.to_num();
         let mut num = 0;
         for (piece_type, board) in self.deref() {
@@ -101,13 +88,16 @@ impl PieceBoard {
             black_piece: BitMap64::new(black),
         }
     }
-    fn remove_piece_unchecked_with_color(&mut self, pos: &BoardPosition, color: Color) {
-        
+    fn remove_piece_with_color(&mut self, pos: &BoardPosition, color: Color) {
         match color {
             Color::White => self.white_piece,
             Color::Black => self.black_piece,
         }
         .clear_bit(pos.to_num())
+    }
+    fn remove_piece(&mut self, pos: &BoardPosition){
+        self.white_piece.clear_bit(pos.to_num());
+        self.black_piece.clear_bit(pos.to_num());
     }
     fn insert_unchecked_with_color(&mut self, pos: &BoardPosition, color: Color) {
         match color {
@@ -116,26 +106,28 @@ impl PieceBoard {
         }
         .set_bit(pos.to_num())
     }
-    fn move_piece_unchecked(&mut self,color:Color,from:&BoardPosition,to:&BoardPosition){
-    let mut pieces=match color {
-        Color::White => self.white_piece,
-        Color::Black => self.black_piece,
-    };
-    pieces.clear_bit(from.to_num());
-    pieces.set_bit(to.to_num());
+    fn move_piece_unchecked(&mut self, color: Color, from: &BoardPosition, to: &BoardPosition) {
+        let mut pieces = match color {
+            Color::White => self.white_piece,
+            Color::Black => self.black_piece,
+        };
+        pieces.clear_bit(from.to_num());
+        pieces.set_bit(to.to_num());
     }
-    
-    
-    pub fn move_piece(&mut self,color:Color,from:&BoardPosition,to:&BoardPosition)->Result<(),Error>{
-        match (!self.is_square_occupied(from),self.is_square_occupied(to)){
-            (false,false)=>{
-                self.move_piece_unchecked(color,from,to);
+
+    pub fn move_piece(
+        &mut self,
+        color: Color,
+        from: &BoardPosition,
+        to: &BoardPosition,
+    ) -> Result<(), Error> {
+        match (!self.is_square_occupied(from), self.is_square_occupied(to)) {
+            (false, false) => {
+                self.move_piece_unchecked(color, from, to);
                 Ok(())
             }
-            (true,_)=>{
-                Err(Error::Board(BoardError::PieceMissing))
-            }
-            (_,true)=>Err(Error::Board(BoardError::PieceWhereMoving))
+            (true, _) => Err(Error::Board(BoardError::PieceMissing)),
+            (_, true) => Err(Error::Board(BoardError::PieceWhereMoving)),
         }
     }
 
@@ -154,11 +146,12 @@ impl PieceBoard {
     fn is_square_occupied(&self, pos: &BoardPosition) -> bool {
         self.get_occupied_squares().contains(pos.into())
     }
-    fn is_square_occupied_color(&self,pos:&BoardPosition,color:Color)->bool{
+    fn is_square_occupied_color(&self, pos: &BoardPosition, color: Color) -> bool {
         match color {
             Color::White => self.white_piece,
             Color::Black => self.black_piece,
-        }.contains(pos.to_num())
+        }
+        .contains(pos.to_num())
     }
 
     fn is_white_piece_on_square(&self, pos: &BoardPosition) -> bool {
@@ -201,9 +194,27 @@ impl PieceBoard {
 }
 
 impl InnerBoard {
-    pub fn remove_piece(&mut self, piece: PieceType, pos: BoardPosition) {
-    
+    pub fn remove_piece(&mut self, piece: PieceType, pos: &BoardPosition) {
+        self[piece].remove_piece(pos)
     }
+    pub fn move_piece(&mut self,
+        color: Color,
+        from: &BoardPosition,
+        piece: PieceType,
+        to: &BoardPosition,)->Result<(),Error>{
+            self[piece].move_piece(color,from,to)
+        }
+        pub fn take_piece(&mut self,
+            color: Color,
+            from: &BoardPosition,
+            piece: PieceType,
+            to: &BoardPosition,)->Result<(),Error>{
+                let mut board=self[piece];
+                board.remove_piece_with_color(to,!color);
+                let res=board.move_piece(color,from,to);
+                self[piece]=board;
+                res
+            }
     pub fn get_all_occupied_squares(&self) -> BitMap64 {
         self.get_all_squares(|v| v.get_occupied_squares())
     }
