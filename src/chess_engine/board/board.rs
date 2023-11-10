@@ -26,31 +26,14 @@ struct InnerBoard {
     pieces: PieceBoards,
 }
 impl InnerBoard {
-    pub fn remove_piece(&mut self, piece: PieceType, pos: &BoardPosition) {
-        self[piece].remove_piece(pos)
+    pub fn perform_actions(actions: Vec<Action>) -> Result<(), ActionError> {
+        for action in actions {
+            action.
+         }
+
+        todo!()
     }
-    pub fn move_piece(
-        &mut self,
-        color: Color,
-        from: &BoardPosition,
-        piece: PieceType,
-        to: &BoardPosition,
-    ) -> Result<(), Error> {
-        self[piece].move_piece(color, from, to)
-    }
-    pub fn take_piece(
-        &mut self,
-        color: Color,
-        from: &BoardPosition,
-        piece: PieceType,
-        to: &BoardPosition,
-    ) -> Result<(), Error> {
-        let mut board = self[piece];
-        board.remove_piece_with_color(to, !color);
-        let res = board.move_piece(color, from, to);
-        self[piece] = board;
-        res
-    }
+
     pub fn get_all_occupied_squares(&self) -> BitMap64 {
         self.get_all_squares(|v| v.get_occupied_squares())
     }
@@ -121,7 +104,6 @@ impl Index<PieceType> for InnerBoard {
         &self
             .get(index as usize)
             .expect("This bounds should never be violated, check the enum values")
-            .1
     }
 }
 impl IndexMut<PieceType> for InnerBoard {
@@ -130,7 +112,6 @@ impl IndexMut<PieceType> for InnerBoard {
             .pieces
             .get_mut(index as usize)
             .expect("This bounds should never be violated, check the enum values")
-            .1
     }
 }
 impl Deref for InnerBoard {
@@ -143,15 +124,15 @@ impl InnerBoard {
     fn get_piece(&self, index: BoardPosition) -> Option<Piece> {
         let square = index.to_num();
         let mut num = 0;
-        for (piece_type, board) in self.deref() {
-            num |= board.get_white_squares().get_bit_value(square) << (*piece_type as i64)
-                | board.get_black_squares().get_bit_value(square) << (*piece_type as i64 + 6)
+        for (piece_type, board) in (0..6).zip(self.iter()) {
+            num |= board.get_white_squares().get_bit_value(square) << (piece_type)
+                | board.get_black_squares().get_bit_value(square) << (piece_type + 6)
         }
         Piece::try_from_bitmap(index, num)
     }
 }
 
-type PieceBoards = [(PieceType, PieceBoard); 6];
+type PieceBoards = [PieceBoard; 6];
 
 #[derive(Debug, Clone, Copy)]
 struct PieceBoard {
