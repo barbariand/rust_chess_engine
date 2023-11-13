@@ -1,20 +1,25 @@
-use crate::error::ActionError;
-
-trait Action {
-    pub fn execute(self, board: &mut InnerBoard) -> Result<(), ActionError>;
+use crate::chess_engine::errors::ActionError;
+use super::board::InnerBoard;
+use super::BoardPosition;
+use crate::chess_engine::pieces::PieceType;  
+use crate::chess_engine::pieces::Color;
+pub(in super::super) trait Action:std::fmt::Debug{
+    fn execute(self, board: &mut InnerBoard) -> Result<(), ActionError>;
 }
-
-struct MoveAction {
+#[derive(Debug)]
+pub struct MoveAction {
     from: BoardPosition,
     to: BoardPosition,
     piece: PieceType,
     piece_color: Color,
 }
 impl Action for MoveAction {
-    fn execute(self, board: &mut InnerBoard) -> Result<(), ActionError> {}
+    fn execute(self, board: &mut InnerBoard) -> Result<(), ActionError> {
+        todo!()
+    }
 }
-
-struct TakeAction {
+#[derive(Debug)]
+pub struct TakeAction {
     take_piece: PieceType,
     take_piece_color: Color,
 }
@@ -23,8 +28,8 @@ impl Action for TakeAction {
         todo!()
     }
 }
-
-struct PromoteAction {
+#[derive(Debug)]
+pub struct PromoteAction {
     become_piece: PieceType,
     become_piece_color: Color,
 }
@@ -33,8 +38,8 @@ impl Action for PromoteAction {
         todo!()
     }
 }
-
-enum CastleAction {
+#[derive(Debug)]
+pub enum CastleAction {
     Right,
     Left,
 }

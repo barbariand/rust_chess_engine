@@ -4,16 +4,10 @@ use super::File;
 use super::Rank;
 use crate::chess_engine::errors::*;
 use crate::chess_engine::history::History;
-use crate::chess_engine::pieces::Action;
-use crate::chess_engine::pieces::Bishop;
+use super::actions::Action;
 use crate::chess_engine::pieces::Color;
-use crate::chess_engine::pieces::King;
-use crate::chess_engine::pieces::Knight;
-use crate::chess_engine::pieces::Pawn;
-use crate::chess_engine::pieces::Piece;
 use crate::chess_engine::pieces::PieceType;
-use crate::chess_engine::pieces::Queen;
-use crate::chess_engine::pieces::Rook;
+use crate::chess_engine::board::actions::MoveAction;
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::marker::PhantomData;
@@ -22,13 +16,13 @@ use std::ops::Index;
 use std::ops::IndexMut;
 
 #[derive(Debug, Clone)]
-struct InnerBoard {
+pub(in super) struct InnerBoard {
     pieces: PieceBoards,
 }
 impl InnerBoard {
-    pub fn perform_actions(actions: Vec<Action>) -> Result<(), ActionError> {
+    pub fn perform_actions(&mut self,actions: Vec<Box<impl Action>>) -> Result<(), ActionError> {
         for action in actions {
-            action.
+            action.execute(self)?;
          }
 
         todo!()
@@ -48,7 +42,7 @@ impl InnerBoard {
 
     fn get_all_squares(&self, func: impl Fn(&PieceBoard) -> BitMap64) -> BitMap64 {
         self.iter()
-            .map(|v| func(&v.1))
+            .map(|v| func(&v))
             .reduce(|acc, piece_board| (acc | piece_board))
             .unwrap_or_default()
     }
@@ -88,12 +82,12 @@ impl Default for InnerBoard {
         let pawns = PieceBoard::new_pawn();
         InnerBoard {
             pieces: [
-                (PT::Pawn, pawns),
-                (PT::Rook, rooks),
-                (PT::Knight, knights),
-                (PT::Bishop, bishops),
-                (PT::King, kings),
-                (PT::Queen, queens),
+                pawns,
+                rooks,
+                knights,
+                bishops,
+                kings,
+                queens,
             ],
         }
     }
@@ -108,7 +102,7 @@ impl Index<PieceType> for InnerBoard {
 }
 impl IndexMut<PieceType> for InnerBoard {
     fn index_mut(&mut self, index: PieceType) -> &mut Self::Output {
-        &mut self
+        self
             .pieces
             .get_mut(index as usize)
             .expect("This bounds should never be violated, check the enum values")
@@ -120,18 +114,6 @@ impl Deref for InnerBoard {
         &self.pieces
     }
 }
-impl InnerBoard {
-    fn get_piece(&self, index: BoardPosition) -> Option<Piece> {
-        let square = index.to_num();
-        let mut num = 0;
-        for (piece_type, board) in (0..6).zip(self.iter()) {
-            num |= board.get_white_squares().get_bit_value(square) << (piece_type)
-                | board.get_black_squares().get_bit_value(square) << (piece_type + 6)
-        }
-        Piece::try_from_bitmap(index, num)
-    }
-}
-
 type PieceBoards = [PieceBoard; 6];
 
 #[derive(Debug, Clone, Copy)]
@@ -251,7 +233,7 @@ impl PieceBoard {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Board {
     inner_board: InnerBoard,
     turn: Color,
@@ -277,8 +259,8 @@ impl Board {
             history: History(Vec::new()),
         }
     }
-    pub fn move_piece(&mut self, action: Action) {
-        action.execute(self);
+    pub fn move_piece(&mut self, action: MoveAction) {
+        action.execute(&mut self.inner_board);
         self.history.add(action);
     }
     pub fn get_movement_options() {}

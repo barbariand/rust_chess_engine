@@ -35,12 +35,13 @@ impl MovementOptions {
         )
     }
 } */
+#[derive(Debug,Clone,Copy)]
 pub enum Color {
     Black,
     White,
 }
 
-#[derive(Debug, Clone, PartialEq, Copy, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum PieceType {
     Pawn = 0,
     Rook = 1,
