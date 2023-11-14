@@ -1,42 +1,41 @@
+use super::actions::Action;
 use super::bitmap::BitMap64;
 use super::BoardPosition;
 use super::File;
 use super::Rank;
+use crate::chess_engine::board::actions::CastleAction;
+use crate::chess_engine::board::actions::MoveAction;
 use crate::chess_engine::errors::*;
 use crate::chess_engine::history::History;
-use super::actions::Action;
 use crate::chess_engine::pieces::Color;
 use crate::chess_engine::pieces::PieceType;
-use crate::chess_engine::board::actions::MoveAction;
-use std::collections::HashMap;
 use std::fmt::Display;
-use std::marker::PhantomData;
 use std::ops::Deref;
 use std::ops::Index;
 use std::ops::IndexMut;
+use std::str::FromStr;
 
 #[derive(Debug, Clone)]
-pub(in super) struct InnerBoard {
+pub(super) struct InnerBoard {
     pieces: PieceBoards,
 }
 impl InnerBoard {
-    pub fn perform_actions(&mut self,actions: Vec<Box<impl Action>>) -> Result<(), ActionError> {
+    fn perform_actions(&mut self, actions: Vec<Box<dyn Action>>) -> Result<(), ActionError> {
         for action in actions {
             action.execute(self)?;
-         }
-
-        todo!()
+        }
+        Ok(())
     }
 
-    pub fn get_all_occupied_squares(&self) -> BitMap64 {
+    fn get_all_occupied_squares(&self) -> BitMap64 {
         self.get_all_squares(|v| v.get_occupied_squares())
     }
 
-    pub fn get_all_white_squares(&self) -> BitMap64 {
+    fn get_all_white_squares(&self) -> BitMap64 {
         self.get_all_squares(|v| v.get_white_squares())
     }
 
-    pub fn get_all_black_squares(&self) -> BitMap64 {
+    fn get_all_black_squares(&self) -> BitMap64 {
         self.get_all_squares(|v| v.get_black_squares())
     }
 
@@ -47,15 +46,15 @@ impl InnerBoard {
             .unwrap_or_default()
     }
 
-    pub fn has(&self, square: u64) -> bool {
+    fn has(&self, square: u64) -> bool {
         self.get_all_occupied_squares().contains(square)
     }
 
-    pub fn has_white(&self, square: u64) -> bool {
+    fn has_white(&self, square: u64) -> bool {
         self.get_all_white_squares().contains(square)
     }
 
-    pub fn has_black(&self, square: u64) -> bool {
+    fn has_black(&self, square: u64) -> bool {
         self.get_all_black_squares().contains(square)
     }
 
@@ -81,14 +80,7 @@ impl Default for InnerBoard {
         let knights = PieceBoard::new_knight();
         let pawns = PieceBoard::new_pawn();
         InnerBoard {
-            pieces: [
-                pawns,
-                rooks,
-                knights,
-                bishops,
-                kings,
-                queens,
-            ],
+            pieces: [pawns, rooks, knights, bishops, kings, queens],
         }
     }
 }
@@ -102,8 +94,7 @@ impl Index<PieceType> for InnerBoard {
 }
 impl IndexMut<PieceType> for InnerBoard {
     fn index_mut(&mut self, index: PieceType) -> &mut Self::Output {
-        self
-            .pieces
+        self.pieces
             .get_mut(index as usize)
             .expect("This bounds should never be violated, check the enum values")
     }
@@ -259,14 +250,110 @@ impl Board {
             history: History(Vec::new()),
         }
     }
-    pub fn move_piece(&mut self, action: MoveAction) {
-        action.execute(&mut self.inner_board);
-        self.history.add(action);
+    
+    pub fn perform_actions(&mut self,vec:Vec<Box<dyn Action>>) -> Result<(), ActionError> {
+        self.inner_board.perform_actions(vec)
     }
+    pub fn try_from_algebraic_chess_notation(input: &str) -> Result<Self, Error> {
+        let input = remove_comments(input)?;
+        let mut state=Color::White;
+        let mut turns= input
+            .split_whitespace()
+            .map(|segment| {
+                let innerstate=state.clone();
+                state =!state;
+                (segment
+                    .chars()
+                    .skip_while(|c| c.is_digit(10) || *c == '.')
+                    .collect::<String>(),innerstate)
+            });
+        let mut board = Board::new();
+        for (string,turn) in turns{
+            board.perform_actions(action_parser(string,turn,&board.inner_board)?);
+        }
+
+        todo!("")
+    }
+
     pub fn get_movement_options() {}
 }
+
 impl Display for Board {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         Ok(())
     }
+}
+fn remove_comments(input: &str) -> Result<String, ParsingError> {
+    let mut cleaned = String::from(input);
+    while let Some(start) = cleaned.find('{') {
+        match cleaned[start..].find('}') {
+            Some(end) => cleaned.replace_range(start..=start + end, ""),
+            None => return Err(ParsingError::UnbalancedBraces),
+        }
+    }
+    Ok(cleaned)
+}
+fn action_parser(v:String,color:Color,board:&InnerBoard)->Result<Vec<Box<dyn Action>>,Error>{
+        let is_taking = v.contains('x');
+        if v == "e.p." {
+            todo!("enpassant")
+        }
+        if v == "O-O-O" {
+            return Ok(vec![Box::new(CastleAction::Long)]);
+        }
+        if v == "O-O" {
+            return Ok(vec![Box::new(CastleAction::Short)]);
+        }
+
+        let mut chars = v.chars().peekable();
+        let piecetype =
+            match chars.peek().ok_or(ParsingError::Uninteligable(v.to_string()))? {
+                'N' => {
+                    chars.next();// need to iterate past it
+                    PieceType::Knight
+                }
+                'Q' => {
+                    chars.next();// need to iterate past it
+                    PieceType::Queen
+                }
+                'R' => {
+                    chars.next();// need to iterate past it
+                    PieceType::Rook
+                }
+                'K' => {
+                    chars.next();// need to iterate past it
+                    PieceType::King
+                }
+                'B' => {
+                    chars.next();// need to iterate past it
+                    PieceType::Bishop
+                }
+                _ => PieceType::Pawn,// dont go past it as it will consume the invisible char that reprisents the pawn :(
+            };
+        let maybe_unambigous_taking =
+            chars.next().ok_or(ParsingError::Uninteligable(v.to_string()))?;
+        let is_unambigous_taking = maybe_unambigous_taking == 'x';
+        match (is_taking, is_unambigous_taking) {
+            (true, true) => {
+                let next_pos = BoardPosition::from_str(&format!(
+                    "{}{}",
+                    chars.next().ok_or(ParsingError::Uninteligable(v.clone().to_string()))?,
+                    chars.next().ok_or(ParsingError::Uninteligable(v.clone().to_string()))?
+                ))?;
+                // we are gona use the bitmasks to know where it was, except if it was pawn then we need to really think
+                todo!()
+            }
+            (true, false) => {
+                let maybe_easy_ambigous_taking =
+                    chars.next().ok_or(ParsingError::Uninteligable(v.clone().to_string()))?;
+                todo!()
+                // well shit it is an ambigous move and we need some brainpower over here
+            }
+            (false, e) => {
+                assert!(!e, "it is not takable but it is an ambigous taing?????");
+                todo!()
+                //it is not taking atleast, now we need to look into wheather it is ambigous or not
+            }
+        }
+    
 }

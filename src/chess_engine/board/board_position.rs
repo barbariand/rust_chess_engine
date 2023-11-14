@@ -17,8 +17,8 @@ impl BoardPosition {
         self.rank as u64 * 8 as u64 + self.file as u64
     }
 }
-impl Into<u64> for &BoardPosition{
-    fn into(self)->u64{
+impl Into<u64> for &BoardPosition {
+    fn into(self) -> u64 {
         self.rank as u64 * 8 as u64 + self.file as u64
     }
 }

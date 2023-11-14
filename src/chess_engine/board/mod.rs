@@ -3,14 +3,14 @@ mod board_position;
 mod file;
 mod rank;
 use std::ops::Mul;
-pub mod bitmap;
 pub mod actions;
+pub mod bitmap;
 pub use board::Board;
 pub use board_position::BoardPosition;
 pub use file::File;
 pub use rank::Rank;
 #[derive(Clone, Copy)]
-pub struct MoveOffset(pub i8, pub i8);// should prob remove
+pub struct MoveOffset(pub i8, pub i8); // should prob remove
 impl<U, T> From<(U, T)> for MoveOffset
 where
     U: Into<i8>,

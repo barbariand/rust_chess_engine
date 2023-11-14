@@ -1,9 +1,14 @@
 pub mod tables {
     mod innertable {
+        
         include!(concat!(env!("OUT_DIR"), "/movetables.rs"));
     }
     pub use innertable::king_moves_bitmask as king_movetable;
     pub use innertable::rook_moves_bitmask as rook_movetable;
+    pub use innertable::bishop_moves_bitmask as bishop_movetable;
+    pub use innertable::knight_moves_bitmask as knight_movetable;
+    pub use innertable::queen_moves_bitmask as queen_movetable;
+    pub use innertable::white_pawn_moves as white_pawn_movetable;
 }
 /*
 pub struct MovementOptions(Vec<Action>);
@@ -40,7 +45,15 @@ pub enum Color {
     Black,
     White,
 }
-
+impl std::ops::Not for Color{
+    type Output=Color;
+    fn not(self)->Self{
+        match self{
+            Color::White=>Color::Black,
+            Color::Black=>Color::White
+        }
+    }
+}
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub enum PieceType {
     Pawn = 0,

@@ -1,41 +1,58 @@
 use std::{error::Error as StdError, fmt::Display};
 
 #[derive(Debug)]
-pub enum Error{
+pub enum Error {
+    Parsning(ParsingError),
     Action(ActionError),
     BoardPosition(BoardPositionError),
-    Board(BoardError)
+    Board(BoardError),
 }
 #[derive(Debug)]
-pub enum ActionError{
+pub enum ParsingError {
+    UnbalancedBraces,
+    Uninteligable(String),
+}
+impl From<ParsingError> for Error {
+    fn from(value: ParsingError) -> Self {
+        Error::Parsning(value)
+    }
+}
+#[derive(Debug)]
+pub enum ActionError {
     PieceNotInPlay,
-    SameColor
+    SameColor,
+}
+impl From<ActionError> for Error {
+    fn from(value: ActionError) -> Self {
+        Error::Action(value)
+    }
 }
 #[derive(Debug)]
-pub enum BoardError{
+pub enum BoardError {
     PieceMissing,
-    PieceWhereMoving
+    PieceWhereMoving,
+}
+impl From<BoardError> for Error {
+    fn from(value: BoardError) -> Self {
+        Error::Board(value)
+    }
 }
 #[derive(Debug)]
-pub enum BoardPositionError{
+pub enum BoardPositionError {
     CharOverflow,
     CharUnderflow,
     NotAFile(String),
     NotARank(String),
 }
-impl From<ActionError> for Error{
-    fn from(value: ActionError) -> Self {
-        Error::Action(value)
-    }
-}
-impl From<BoardPositionError> for Error{
+
+impl From<BoardPositionError> for Error {
     fn from(value: BoardPositionError) -> Self {
         Error::BoardPosition(value)
     }
 }
-impl Display for Error{
+impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f,"fuck you")
+        todo!("do a better error implementaton")
     }
 }
-impl StdError for Error{}
+impl StdError for Error {}

@@ -1,10 +1,11 @@
 use dyn_clone::DynClone;
 
-use crate::chess_engine::errors::ActionError;
 use super::board::InnerBoard;
 use super::BoardPosition;
-use crate::chess_engine::pieces::PieceType;
+use crate::chess_engine::errors::ActionError;
 use crate::chess_engine::pieces::Color;
+use crate::chess_engine::pieces::PieceType;
+
 pub(in super::super) trait Action: std::fmt::Debug + DynClone {
     fn execute(self, board: &mut InnerBoard) -> Result<(), ActionError>;
 }
@@ -44,8 +45,8 @@ impl Action for PromoteAction {
 }
 #[derive(Debug, Clone)]
 pub enum CastleAction {
-    Right,
-    Left,
+    Long,
+    Short,
 }
 impl Action for CastleAction {
     fn execute(self, board: &mut InnerBoard) -> Result<(), ActionError> {

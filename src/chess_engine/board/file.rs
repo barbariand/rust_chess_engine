@@ -39,9 +39,10 @@ impl TryFrom<i8> for File {
             6 => Self::F,
             7 => Self::G,
             8 => Self::H,
-            err => Err(BoardPositionError::NotAFile(
-                format!("{} is not a valid file", err)
-            ))?,
+            err => Err(BoardPositionError::NotAFile(format!(
+                "{} is not a valid file",
+                err
+            )))?,
         })
     }
 }
