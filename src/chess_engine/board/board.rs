@@ -89,14 +89,14 @@ impl Index<PieceType> for InnerBoard {
     fn index(&self, index: PieceType) -> &Self::Output {
         &self
             .get(index as usize)
-            .expect("This bounds should never be violated, check the enum values")
+            .expect("The PieceType number bounds should never be violated, check the enum values")
     }
 }
 impl IndexMut<PieceType> for InnerBoard {
     fn index_mut(&mut self, index: PieceType) -> &mut Self::Output {
         self.pieces
             .get_mut(index as usize)
-            .expect("This bounds should never be violated, check the enum values")
+            .expect("The PieceType number bounds should never be violated, check the enum values")
     }
 }
 impl Deref for InnerBoard {
