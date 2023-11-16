@@ -3,43 +3,43 @@ use std::fs;
 use std::path::Path;
 
 fn main() {
-    let mut generated_str = String::from("pub static king_moves_bitmask: [u64; 64] = [");
+    let mut generated_str = String::from("pub static king_moves_bitmask: [BitMap64; 64] = [");
     for i in 0..64 {
         //king
-        generated_str += &format!("0b{:064b},", king_moves_bitmask(i));
+        generated_str += &format!("BitMap64::new(0b{:064b}),", king_moves_bitmask(i));
     }
     generated_str += "];";
-    generated_str += "pub static knight_moves_bitmask: [u64; 64] = [";
+    generated_str += "pub static knight_moves_bitmask: [BitMap64; 64] = [";
     for i in 0..64 {
         //king
-        generated_str += &format!("0b{:064b},", knight_moves_bitmask(i));
+        generated_str += &format!("BitMap64::new(0b{:064b}),", knight_moves_bitmask(i));
     }
     generated_str += "];";
-    generated_str += "pub static rook_moves_bitmask: [u64; 64] = [";
+    generated_str += "pub static rook_moves_bitmask: [BitMap64; 64] = [";
     for i in 0..64 {
         //king
-        generated_str += &format!("0b{:064b},", rook_moves_bitmask(i));
+        generated_str += &format!("BitMap64::new(0b{:064b}),", rook_moves_bitmask(i));
     }
     generated_str += "];";
-    generated_str += "pub static bishop_moves_bitmask: [u64; 64] = [";
+    generated_str += "pub static bishop_moves_bitmask: [BitMap64; 64] = [";
     for i in 0..64 {
         //king
-        generated_str += &format!("0b{:064b},", bishop_moves_bitmask(i));
+        generated_str += &format!("BitMap64::new(0b{:064b}),", bishop_moves_bitmask(i));
     }
     generated_str += "];";
-    generated_str += "pub static queen_moves_bitmask: [u64; 64] = [";
+    generated_str += "pub static queen_moves_bitmask: [BitMap64; 64] = [";
     for i in 0..64 {
         //king
-        generated_str += &format!("0b{:064b},", queen_moves_bitmask(i));
+        generated_str += &format!("BitMap64::new(0b{:064b}),", queen_moves_bitmask(i));
     }
     generated_str += "];";
-    generated_str += "pub static white_pawn_moves: [(u64,u64); 64] = [";
+    generated_str += "pub static white_pawn_moves: [(BitMap64,BitMap64); 64] = [";
     for i in 0..56 {
         let a = white_pawn_moves(i);
-        generated_str += &format!("(0b{:064b},0b{:064b}),", a.0, a.1);
+        generated_str += &format!("(BitMap64::new(0b{:064b}),BitMap64::new(0b{:064b})),", a.0, a.1);
     }
     for _ in 0..8 {
-        generated_str += "(0,0),"
+        generated_str += "(BitMap64::new(0),BitMap64::new(0)),"
     }
     generated_str += "];";
     let out_dir = env::var_os("OUT_DIR").unwrap();
