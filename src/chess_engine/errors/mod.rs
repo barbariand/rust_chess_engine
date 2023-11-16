@@ -3,7 +3,6 @@ use std::{error::Error as StdError, fmt::Display};
 #[derive(Debug)]
 pub enum Error {
     Parsning(ParsingError),
-    Action(ActionError),
     BoardPosition(BoardPositionError),
     Board(BoardError),
 }
@@ -18,19 +17,11 @@ impl From<ParsingError> for Error {
     }
 }
 #[derive(Debug)]
-pub enum ActionError {
-    PieceNotInPlay,
-    SameColor,
-}
-impl From<ActionError> for Error {
-    fn from(value: ActionError) -> Self {
-        Error::Action(value)
-    }
-}
-#[derive(Debug)]
 pub enum BoardError {
     PieceMissing,
     PieceWhereMoving,
+    PieceNotInPlay,
+    SameColor,
 }
 impl From<BoardError> for Error {
     fn from(value: BoardError) -> Self {
