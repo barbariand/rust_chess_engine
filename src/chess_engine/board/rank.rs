@@ -1,7 +1,4 @@
-use std::{
-    ops::{Add, Sub},
-    str::FromStr,
-};
+use std::ops::{Add, Sub};
 
 use crate::chess_engine::{errors::BoardPositionError, Error};
 
