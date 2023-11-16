@@ -2,16 +2,16 @@ use std::ops::{Add, Sub};
 
 use crate::chess_engine::{errors::BoardPositionError, Error};
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum Rank {
-    One,
-    Two,
-    Three,
-    Four,
-    Five,
-    Six,
-    Seven,
     Eight,
+    Seven,
+    Six,
+    Five,
+    Four,
+    Three,
+    Two,
+    One,
 }
 impl TryFrom<char> for Rank {
     type Error = Error;

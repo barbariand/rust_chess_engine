@@ -2,16 +2,16 @@ use std::ops::{Add, Sub};
 
 use crate::chess_engine::{errors::BoardPositionError, Error};
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum File {
-    A,
-    B,
-    C,
-    D,
-    E,
-    F,
-    G,
     H,
+    G,
+    F,
+    E,
+    D,
+    C,
+    B,
+    A,
 }
 impl TryFrom<char> for File {
     type Error = Error;
