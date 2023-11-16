@@ -121,3 +121,32 @@ impl BitXorAssign<u64> for BitMap64 {
         self.0 = self.0 ^ rhs
     }
 }
+
+impl IntoIterator for &BitMap64 {
+    type Item = bool;
+
+    type IntoIter = BitMap64Iterator;
+
+    fn into_iter(self) -> Self::IntoIter {
+        BitMap64Iterator {
+            bitmap: *self, //copy semantics, it is safe to just move it here
+            current: 0,
+        }
+    }
+}
+pub struct BitMap64Iterator {
+    bitmap: BitMap64,
+    current: u64,
+}
+impl Iterator for BitMap64Iterator {
+    type Item = bool;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current > 64 {
+            return None;
+        }
+        let res = self.bitmap.get_bit(self.current);
+        self.current += 1;
+        Some(res)
+    }
+}
