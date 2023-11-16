@@ -6,6 +6,12 @@ pub enum Error {
     BoardPosition(BoardPositionError),
     Board(BoardError),
 }
+impl Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        todo!()
+    }
+}
+impl StdError for Error {}
 #[derive(Debug)]
 pub enum ParsingError {
     UnbalancedBraces,
@@ -14,6 +20,11 @@ pub enum ParsingError {
 impl From<ParsingError> for Error {
     fn from(value: ParsingError) -> Self {
         Error::Parsning(value)
+    }
+}
+impl Display for ParsingError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        todo!("")
     }
 }
 #[derive(Debug)]
@@ -26,6 +37,11 @@ pub enum BoardError {
 impl From<BoardError> for Error {
     fn from(value: BoardError) -> Self {
         Error::Board(value)
+    }
+}
+impl Display for BoardError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        todo!()
     }
 }
 #[derive(Debug)]
@@ -41,9 +57,8 @@ impl From<BoardPositionError> for Error {
         Error::BoardPosition(value)
     }
 }
-impl Display for Error {
+impl Display for BoardPositionError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!("do a better error implementaton")
+        todo!()
     }
 }
-impl StdError for Error {}
