@@ -1,4 +1,5 @@
 use super::actions::Action;
+use super::actions::Actions;
 use super::bitmap::BitMap64;
 use super::BoardPosition;
 use super::File;
@@ -20,7 +21,7 @@ pub(super) struct InnerBoard {
     pieces: PieceBoards,
 }
 impl InnerBoard {
-    fn perform_actions(&mut self, actions: Vec<Box<dyn Action>>) -> Result<(), ActionError> {
+    fn perform_actions(&mut self, actions: Vec<Actions>) -> Result<(), BoardError> {
         for action in actions {
             action.execute(self)?;
         }
@@ -50,11 +51,11 @@ impl InnerBoard {
         self.get_all_occupied_squares().contains(square)
     }
 
-    fn has_white(&self, square: u64) -> bool {
+    fn has_white_piece(&self, square: u64) -> bool {
         self.get_all_white_squares().contains(square)
     }
 
-    fn has_black(&self, square: u64) -> bool {
+    fn has_black_piece(&self, square: u64) -> bool {
         self.get_all_black_squares().contains(square)
     }
 
@@ -69,10 +70,19 @@ impl InnerBoard {
     fn count_all_black_pieces(&self) -> u8 {
         self.get_all_black_squares().count_ones()
     }
+    pub fn get_movement_options(&self, color: Color) -> Vec<Actions> {
+        self.iter()
+            .flat_map(|pb| pb.get_movement_options(color))
+            .collect()
+    }
+    pub fn can_take(&self,taker: PieceType, target: PieceType, from: BoardPosition, to:BoardPosition) -> bool {
+
+        todo!()
+    }
+    
 }
 impl Default for InnerBoard {
     fn default() -> Self {
-        use PieceType as PT;
         let kings = PieceBoard::new_king();
         let queens = PieceBoard::new_queen();
         let bishops = PieceBoard::new_bishop();
@@ -108,12 +118,12 @@ impl Deref for InnerBoard {
 type PieceBoards = [PieceBoard; 6];
 
 #[derive(Debug, Clone, Copy)]
-struct PieceBoard {
+pub struct PieceBoard {
     white_piece: BitMap64,
     black_piece: BitMap64,
 }
 impl PieceBoard {
-    fn new_custom(white: i64, black: i64) -> PieceBoard {
+    fn new_custom(white: u64, black: u64) -> PieceBoard {
         PieceBoard {
             white_piece: BitMap64::new(white),
             black_piece: BitMap64::new(black),
@@ -126,7 +136,7 @@ impl PieceBoard {
         }
         .clear_bit(pos.to_num())
     }
-    fn remove_piece(&mut self, pos: &BoardPosition) {
+    pub fn remove_piece(&mut self, pos: &BoardPosition) {
         self.white_piece.clear_bit(pos.to_num());
         self.black_piece.clear_bit(pos.to_num());
     }
@@ -151,14 +161,14 @@ impl PieceBoard {
         color: Color,
         from: &BoardPosition,
         to: &BoardPosition,
-    ) -> Result<(), Error> {
+    ) -> Result<(), BoardError> {
         match (!self.is_square_occupied(from), self.is_square_occupied(to)) {
             (false, false) => {
                 self.move_piece_unchecked(color, from, to);
                 Ok(())
             }
-            (true, _) => Err(Error::Board(BoardError::PieceMissing)),
-            (_, true) => Err(Error::Board(BoardError::PieceWhereMoving)),
+            (true, _) => Err(BoardError::PieceMissing),
+            (_, true) => Err(BoardError::PieceWhereMoving),
         }
     }
 
@@ -222,6 +232,10 @@ impl PieceBoard {
     fn new_queen() -> PieceBoard {
         PieceBoard::new_custom(0b1 << 59, 0b1 << 4)
     }
+    pub fn get_movement_options(&self, color: Color) -> Vec<Actions> {
+        todo!()
+    }
+    
 }
 
 #[derive(Debug)]
@@ -250,32 +264,35 @@ impl Board {
             history: History(Vec::new()),
         }
     }
-    
-    pub fn perform_actions(&mut self,vec:Vec<Box<dyn Action>>) -> Result<(), ActionError> {
+
+    pub fn perform_actions(&mut self, vec: Vec<Actions>) -> Result<(), BoardError> {
         self.inner_board.perform_actions(vec)
     }
     pub fn try_from_algebraic_chess_notation(input: &str) -> Result<Self, Error> {
         let input = remove_comments(input)?;
-        let mut state=Color::White;
-        let mut turns= input
-            .split_whitespace()
-            .map(|segment| {
-                let innerstate=state.clone();
-                state =!state;
-                (segment
+        let mut state = Color::White;
+        let mut turns = input.split_whitespace().map(|segment| {
+            let innerstate = state.clone();
+            state = !state;
+            (
+                segment
                     .chars()
                     .skip_while(|c| c.is_digit(10) || *c == '.')
-                    .collect::<String>(),innerstate)
-            });
+                    .collect::<String>(),
+                innerstate,
+            )
+        });
         let mut board = Board::new();
-        for (string,turn) in turns{
-            board.perform_actions(action_parser(string,turn,&board.inner_board)?);
+        for (string, turn) in turns {
+            board.perform_actions(action_parser(string, turn, &board.inner_board)?)?;
         }
 
-        todo!("")
+        Ok(board)
     }
 
-    pub fn get_movement_options() {}
+    pub fn get_movement_options(&self) -> Vec<Actions> {
+        todo!()
+    }
 }
 
 impl Display for Board {
@@ -293,67 +310,75 @@ fn remove_comments(input: &str) -> Result<String, ParsingError> {
     }
     Ok(cleaned)
 }
-fn action_parser(v:String,color:Color,board:&InnerBoard)->Result<Vec<Box<dyn Action>>,Error>{
-        let is_taking = v.contains('x');
-        if v == "e.p." {
-            todo!("enpassant")
-        }
-        if v == "O-O-O" {
-            return Ok(vec![Box::new(CastleAction::Long)]);
-        }
-        if v == "O-O" {
-            return Ok(vec![Box::new(CastleAction::Short)]);
-        }
+/// parses a single string with no space acording to chess anotation
+fn action_parser(v: String, color: Color, board: &InnerBoard) -> Result<Vec<Actions>, Error> {
+    let is_taking = v.contains('x');
+    if v == "e.p." {
+        todo!("enpassant")
+    }
+    if v == "O-O-O" {
+        return Ok(vec![Actions::Castle(CastleAction::Long(color))]);
+    }
+    if v == "O-O" {
+        return Ok(vec![Actions::Castle(CastleAction::Short(color))]);
+    }
 
-        let mut chars = v.chars().peekable();
-        let piecetype =
-            match chars.peek().ok_or(ParsingError::Uninteligable(v.to_string()))? {
-                'N' => {
-                    chars.next();// need to iterate past it
-                    PieceType::Knight
-                }
-                'Q' => {
-                    chars.next();// need to iterate past it
-                    PieceType::Queen
-                }
-                'R' => {
-                    chars.next();// need to iterate past it
-                    PieceType::Rook
-                }
-                'K' => {
-                    chars.next();// need to iterate past it
-                    PieceType::King
-                }
-                'B' => {
-                    chars.next();// need to iterate past it
-                    PieceType::Bishop
-                }
-                _ => PieceType::Pawn,// dont go past it as it will consume the invisible char that reprisents the pawn :(
-            };
-        let maybe_unambigous_taking =
-            chars.next().ok_or(ParsingError::Uninteligable(v.to_string()))?;
-        let is_unambigous_taking = maybe_unambigous_taking == 'x';
-        match (is_taking, is_unambigous_taking) {
-            (true, true) => {
-                let next_pos = BoardPosition::from_str(&format!(
-                    "{}{}",
-                    chars.next().ok_or(ParsingError::Uninteligable(v.clone().to_string()))?,
-                    chars.next().ok_or(ParsingError::Uninteligable(v.clone().to_string()))?
-                ))?;
-                // we are gona use the bitmasks to know where it was, except if it was pawn then we need to really think
-                todo!()
-            }
-            (true, false) => {
-                let maybe_easy_ambigous_taking =
-                    chars.next().ok_or(ParsingError::Uninteligable(v.clone().to_string()))?;
-                todo!()
-                // well shit it is an ambigous move and we need some brainpower over here
-            }
-            (false, e) => {
-                assert!(!e, "it is not takable but it is an ambigous taing?????");
-                todo!()
-                //it is not taking atleast, now we need to look into wheather it is ambigous or not
-            }
+    let mut chars = v.chars().peekable();
+    let piecetype = match chars
+        .peek()
+        .ok_or(ParsingError::Uninteligable(v.to_string()))?
+    {
+        'N' => {
+            chars.next(); // need to iterate past it
+            PieceType::Knight
         }
-    
+        'Q' => {
+            chars.next(); // need to iterate past it
+            PieceType::Queen
+        }
+        'R' => {
+            chars.next(); // need to iterate past it
+            PieceType::Rook
+        }
+        'K' => {
+            chars.next(); // need to iterate past it
+            PieceType::King
+        }
+        'B' => {
+            chars.next(); // need to iterate past it
+            PieceType::Bishop
+        }
+        _ => PieceType::Pawn, // dont go past it as it will consume the invisible char that reprisents the pawn :(
+    };
+    let maybe_unambigous_taking = chars
+        .next()
+        .ok_or(ParsingError::Uninteligable(v.to_string()))?;
+    let is_unambigous_taking = maybe_unambigous_taking == 'x';
+    match (is_taking, is_unambigous_taking) {
+        (true, true) => {
+            let next_pos = BoardPosition::from_str(&format!(
+                "{}{}",
+                chars
+                    .next()
+                    .ok_or(ParsingError::Uninteligable(v.clone().to_string()))?,
+                chars
+                    .next()
+                    .ok_or(ParsingError::Uninteligable(v.clone().to_string()))?
+            ))?;
+            // we are gona use the bitmasks to know where it was, except if it was pawn then we need to really think
+            todo!()
+        }
+        (true, false) => {
+            let maybe_easy_ambigous_taking = chars
+                .next()
+                .ok_or(ParsingError::Uninteligable(v.clone().to_string()))?;
+            todo!()
+            // well shit it is an ambigous move and we need some brainpower over here
+        }
+        (false, e) => {
+            assert!(!e, "it is not takable but it is an ambigous taing?????");
+            todo!()
+            //it is not taking atleast, now we need to look into wheather it is ambigous or not
+        }
+    }
 }
