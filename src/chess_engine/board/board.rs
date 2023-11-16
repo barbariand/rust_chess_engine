@@ -1,13 +1,11 @@
-use super::actions::Action;
 use super::actions::Actions;
+use super::actions::PreformAction;
 use super::bitmap::BitMap64;
 use super::BoardPosition;
-use super::File;
-use super::Rank;
 use crate::chess_engine::board::actions::CastleAction;
-use crate::chess_engine::board::actions::MoveAction;
 use crate::chess_engine::errors::*;
 use crate::chess_engine::history::History;
+use crate::chess_engine::pieces::tables;
 use crate::chess_engine::pieces::Color;
 use crate::chess_engine::pieces::PieceType;
 use std::fmt::Display;
@@ -23,20 +21,20 @@ pub(super) struct InnerBoard {
 impl InnerBoard {
     fn perform_actions(&mut self, actions: Vec<Actions>) -> Result<(), BoardError> {
         for action in actions {
-            action.execute(self)?;
+            action.preform(self)?;
         }
         Ok(())
     }
 
-    fn get_all_occupied_squares(&self) -> BitMap64 {
+    pub fn get_all_occupied_squares(&self) -> BitMap64 {
         self.get_all_squares(|v| v.get_occupied_squares())
     }
 
-    fn get_all_white_squares(&self) -> BitMap64 {
+    pub fn get_all_white_squares(&self) -> BitMap64 {
         self.get_all_squares(|v| v.get_white_squares())
     }
 
-    fn get_all_black_squares(&self) -> BitMap64 {
+    pub fn get_all_black_squares(&self) -> BitMap64 {
         self.get_all_squares(|v| v.get_black_squares())
     }
 
@@ -75,11 +73,15 @@ impl InnerBoard {
             .flat_map(|pb| pb.get_movement_options(color))
             .collect()
     }
-    pub fn can_take(&self,taker: PieceType, target: PieceType, from: BoardPosition, to:BoardPosition) -> bool {
-
+    pub fn can_take(
+        &self,
+        taker: PieceType,
+        target: PieceType, //technicaly we dont need this but it is nice so we dont sort thrugh everyone lmao
+        from: BoardPosition,
+        to: BoardPosition,
+    ) -> bool {
         todo!()
     }
-    
 }
 impl Default for InnerBoard {
     fn default() -> Self {
@@ -129,28 +131,54 @@ impl PieceBoard {
             black_piece: BitMap64::new(black),
         }
     }
-    fn remove_piece_with_color(&mut self, pos: &BoardPosition, color: Color) {
+    fn remove_piece_unchecked_with_color(&mut self, pos: &BoardPosition, color: &Color) {
         match color {
-            Color::White => self.white_piece,
-            Color::Black => self.black_piece,
+            Color::White => &mut self.white_piece,
+            Color::Black => &mut self.black_piece,
         }
         .clear_bit(pos.to_num())
     }
-    pub fn remove_piece(&mut self, pos: &BoardPosition) {
-        self.white_piece.clear_bit(pos.to_num());
-        self.black_piece.clear_bit(pos.to_num());
+    pub fn remove_piece_with_color(
+        &mut self,
+        pos: &BoardPosition,
+        color: &Color,
+    ) -> Result<(), BoardError> {
+        let bitmap = match color {
+            Color::White => &mut self.white_piece,
+            Color::Black => &mut self.black_piece,
+        };
+
+        bitmap
+            .get_bit(pos.to_num())
+            .then(|| bitmap.clear_bit(pos.to_num()))
+            .ok_or(BoardError::PieceMissing)
     }
-    fn insert_unchecked_with_color(&mut self, pos: &BoardPosition, color: Color) {
+    fn insert_unchecked_with_color(&mut self, pos: &BoardPosition, color: &Color) {
         match color {
-            Color::White => self.white_piece,
-            Color::Black => self.black_piece,
+            Color::White => &mut self.white_piece,
+            Color::Black => &mut self.black_piece,
         }
         .set_bit(pos.to_num())
     }
-    fn move_piece_unchecked(&mut self, color: Color, from: &BoardPosition, to: &BoardPosition) {
-        let mut pieces = match color {
-            Color::White => self.white_piece,
-            Color::Black => self.black_piece,
+    pub fn insert_piece_with_color(
+        &mut self,
+        pos: &BoardPosition,
+        color: &Color,
+    ) -> Result<(), BoardError> {
+        let bitmap = match color {
+            Color::White => &mut self.white_piece,
+            Color::Black => &mut self.black_piece,
+        };
+
+        bitmap
+            .get_bit(pos.to_num())
+            .then(|| bitmap.set_bit(pos.to_num()))
+            .ok_or(BoardError::PieceMissing)
+    }
+    fn move_piece_unchecked(&mut self, color: &Color, from: &BoardPosition, to: &BoardPosition) {
+        let pieces = match color {
+            Color::White => &mut self.white_piece,
+            Color::Black => &mut self.black_piece,
         };
         pieces.clear_bit(from.to_num());
         pieces.set_bit(to.to_num());
@@ -158,7 +186,7 @@ impl PieceBoard {
 
     pub fn move_piece(
         &mut self,
-        color: Color,
+        color: &Color,
         from: &BoardPosition,
         to: &BoardPosition,
     ) -> Result<(), BoardError> {
@@ -235,7 +263,6 @@ impl PieceBoard {
     pub fn get_movement_options(&self, color: Color) -> Vec<Actions> {
         todo!()
     }
-    
 }
 
 #[derive(Debug)]
@@ -365,7 +392,7 @@ fn action_parser(v: String, color: Color, board: &InnerBoard) -> Result<Vec<Acti
                     .next()
                     .ok_or(ParsingError::Uninteligable(v.clone().to_string()))?
             ))?;
-            // we are gona use the bitmasks to know where it was, except if it was pawn then we need to really think
+            // we are gona use the bitmasks to know where it was,
             todo!()
         }
         (true, false) => {
