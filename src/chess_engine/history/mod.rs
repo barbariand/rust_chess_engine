@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use crate::chess_engine::board::actions::Actions;
 
 #[derive(Default, Debug)]

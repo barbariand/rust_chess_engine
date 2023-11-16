@@ -1,4 +1,3 @@
-#![feature(allocator_api)]
 use chess_engine::board::Board;
 
 mod chess_engine;
