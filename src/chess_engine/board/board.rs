@@ -1,5 +1,5 @@
-use super::actions::Actions;
 use super::actions::PreformAction;
+use super::actions::*;
 use super::bitmap::BitMap64;
 use super::BoardPosition;
 use crate::chess_engine::board::actions::CastleAction;
@@ -19,13 +19,29 @@ pub(super) struct InnerBoard {
     pieces: PieceBoards,
 }
 impl InnerBoard {
-    fn perform_actions(&mut self, actions: Vec<Actions>) -> Result<(), BoardError> {
-        for action in actions {
-            action.preform(self)?;
-        }
-        Ok(())
+    fn perform_actions(&mut self, actions: Actions) -> Result<(), BoardError> {
+        actions.preform(self)
     }
 
+    fn what_piece_on_square(&self, pos: &BoardPosition) -> Option<PieceType> {
+        for (pb, i) in self.pieces.iter().zip(PieceType::Pawn..PieceType::Queen) {
+            if pb.is_square_occupied(pos) {
+                return Some(i);
+            }
+        }
+        None
+    }
+    fn what_color_is_on_square(&self, pos: &BoardPosition) -> Option<Color> {
+        for pb in self.pieces {
+            if pb.is_white_piece_on_square(pos) {
+                return Some(Color::White);
+            }
+            if pb.is_black_piece_on_square(pos) {
+                return Some(Color::Black);
+            }
+        }
+        None
+    }
     pub fn get_all_occupied_squares(&self) -> BitMap64 {
         self.get_all_squares(|v| v.get_occupied_squares())
     }
@@ -292,8 +308,8 @@ impl Board {
         }
     }
 
-    pub fn perform_actions(&mut self, vec: Vec<Actions>) -> Result<(), BoardError> {
-        self.inner_board.perform_actions(vec)
+    pub fn perform_actions(&mut self, actions: Actions) -> Result<(), BoardError> {
+        self.inner_board.perform_actions(actions)
     }
     pub fn try_from_algebraic_chess_notation(input: &str) -> Result<Self, Error> {
         let input = remove_comments(input)?;
@@ -332,29 +348,39 @@ fn remove_comments(input: &str) -> Result<String, ParsingError> {
     while let Some(start) = cleaned.find('{') {
         match cleaned[start..].find('}') {
             Some(end) => cleaned.replace_range(start..=start + end, ""),
-            None => return Err(ParsingError::UnbalancedBraces),
+            None => {
+                return Err(ParsingError::UnbalancedBraces(ExpectedOneOf::new(
+                    vec!['}'],
+                    None,
+                    Some(input.to_string()),
+                )))
+            }
         }
+    }
+    if cleaned.find('}').is_some() {
+        return Err(ParsingError::UnbalancedBraces(ExpectedOneOf::new(
+            vec!['}'],
+            None,
+            Some(input.to_string()),
+        )));
     }
     Ok(cleaned)
 }
 /// parses a single string with no space acording to chess anotation
-fn action_parser(v: String, color: Color, board: &InnerBoard) -> Result<Vec<Actions>, Error> {
+fn action_parser(v: String, color: Color, board: &InnerBoard) -> Result<Actions, Error> {
     let is_taking = v.contains('x');
     if v == "e.p." {
         todo!("enpassant")
     }
     if v == "O-O-O" {
-        return Ok(vec![Actions::Castle(CastleAction::Long(color))]);
+        return Ok(Actions::Castle(CastleAction::Long(color)));
     }
     if v == "O-O" {
-        return Ok(vec![Actions::Castle(CastleAction::Short(color))]);
+        return Ok(Actions::Castle(CastleAction::Short(color)));
     }
 
     let mut chars = v.chars().peekable();
-    let piecetype = match chars
-        .peek()
-        .ok_or(ParsingError::Uninteligable(v.to_string()))?
-    {
+    let piecetype = match chars.peek().ok_or(ParsingError::CharUnderflow)? {
         'N' => {
             chars.next(); // need to iterate past it
             PieceType::Knight
@@ -377,35 +403,98 @@ fn action_parser(v: String, color: Color, board: &InnerBoard) -> Result<Vec<Acti
         }
         _ => PieceType::Pawn, // dont go past it as it will consume the invisible char that reprisents the pawn :(
     };
-    let maybe_unambigous_taking = chars
-        .next()
-        .ok_or(ParsingError::Uninteligable(v.to_string()))?;
+    let maybe_unambigous_taking =
+        chars
+            .next()
+            .ok_or(ParsingError::ExpectedOneOf(ExpectedOneOf::new(
+                vec![
+                    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', '1', '2', '3', '4', '5', '6', '7', '8',
+                    'x',
+                ],
+                None,
+                Some(v.to_string()),
+            )))?;
     let is_unambigous_taking = maybe_unambigous_taking == 'x';
-    match (is_taking, is_unambigous_taking) {
+    Ok(match (is_taking, is_unambigous_taking) {
         (true, true) => {
             let next_pos = BoardPosition::from_str(&format!(
                 "{}{}",
                 chars
                     .next()
-                    .ok_or(ParsingError::Uninteligable(v.clone().to_string()))?,
+                    .ok_or(ParsingError::ExpectedOneOf(ExpectedOneOf::new(
+                        vec!['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'],
+                        None,
+                        Some(v.to_string()),
+                    )))?,
                 chars
                     .next()
-                    .ok_or(ParsingError::Uninteligable(v.clone().to_string()))?
+                    .ok_or(ParsingError::ExpectedOneOf(ExpectedOneOf::new(
+                        vec!['1', '2', '3', '4', '5', '6', '7', '8'],
+                        None,
+                        Some(v.to_string()),
+                    )))?
             ))?;
             // we are gona use the bitmasks to know where it was,
             todo!()
         }
         (true, false) => {
-            let maybe_easy_ambigous_taking = chars
+            let maybe_easy_ambigous_taking =
+                chars
+                    .next()
+                    .ok_or(ParsingError::ExpectedOneOf(ExpectedOneOf::new(
+                        vec![
+                            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', '1', '2', '3', '4', '5', '6',
+                            '7', '8',
+                        ],
+                        None,
+                        Some(v.to_string()),
+                    )))?;
+            if maybe_easy_ambigous_taking == 'x' {
+                todo!("hard ambigous")
+            }
+            let from_pos = BoardPosition::from_str(&format!(
+                "{}{}",
+                maybe_unambigous_taking, maybe_easy_ambigous_taking
+            ))?;
+            chars
                 .next()
-                .ok_or(ParsingError::Uninteligable(v.clone().to_string()))?;
-            todo!()
-            // well shit it is an ambigous move and we need some brainpower over here
+                .ok_or(ParsingError::ExpectedOneOf(ExpectedOneOf::new(
+                    vec!['x'],
+                    None,
+                    Some(v.to_string()),
+                )))?;
+            let to_pos = BoardPosition::from_str(&format!(
+                "{}{}",
+                chars
+                    .next()
+                    .ok_or(ParsingError::ExpectedOneOf(ExpectedOneOf::new(
+                        vec!['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'],
+                        None,
+                        Some(v.to_string()),
+                    )))?,
+                chars
+                    .next()
+                    .ok_or(ParsingError::ExpectedOneOf(ExpectedOneOf::new(
+                        vec!['1', '2', '3', '4', '5', '6', '7', '8'],
+                        None,
+                        Some(v.to_string()),
+                    )))?
+            ))?;
+            let taking_piecetype = board
+                .what_piece_on_square(&to_pos)
+                .ok_or(BoardError::PieceMissing)?;
+            let taking_piece_color = board.what_color_is_on_square(&to_pos).expect(
+                "The piece existed on a square the line before, somethign has corrupted the board",
+            );
+            Actions::Take(
+                TakeAction::new(taking_piecetype, taking_piece_color, to_pos),
+                MoveAction::new(from_pos, to_pos, piecetype, color),
+            )
         }
         (false, e) => {
             assert!(!e, "it is not takable but it is an ambigous taing?????");
             todo!()
             //it is not taking atleast, now we need to look into wheather it is ambigous or not
         }
-    }
+    })
 }

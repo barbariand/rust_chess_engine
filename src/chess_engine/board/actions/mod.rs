@@ -28,6 +28,7 @@ pub enum Actions {
     Promote(MoveAction, PromoteAction),
     TakeAndPromote(TakeAction, MoveAction, PromoteAction),
     Castle(CastleAction),
+    EnPassant(EnPassant),
 }
 impl Action for Actions {
     fn execute(self, board: &mut InnerBoard) -> Result<(), BoardError> {
@@ -47,16 +48,32 @@ impl Action for Actions {
                 promote_action.execute(board)
             }
             Actions::Castle(castle_action) => castle_action.execute(board),
+            Actions::EnPassant(enpassant_action) => enpassant_action.execute(board),
         }
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct MoveAction {
+pub(super) struct MoveAction {
     from: BoardPosition,
     to: BoardPosition,
     piece: PieceType,
     piece_color: Color,
+}
+impl MoveAction {
+    pub fn new(
+        from: BoardPosition,
+        to: BoardPosition,
+        piece: PieceType,
+        piece_color: Color,
+    ) -> Self {
+        Self {
+            from,
+            to,
+            piece,
+            piece_color,
+        }
+    }
 }
 impl Action for MoveAction {
     fn execute(self, board: &mut InnerBoard) -> Result<(), BoardError> {
@@ -64,10 +81,19 @@ impl Action for MoveAction {
     }
 }
 #[derive(Debug, Clone)]
-pub struct TakeAction {
+pub(super) struct TakeAction {
     take_piece: PieceType,
     take_piece_color: Color,
     pos: BoardPosition,
+}
+impl TakeAction {
+    pub fn new(take_piece: PieceType, take_piece_color: Color, pos: BoardPosition) -> Self {
+        Self {
+            take_piece,
+            take_piece_color,
+            pos,
+        }
+    }
 }
 impl Action for TakeAction {
     fn execute(self, board: &mut InnerBoard) -> Result<(), BoardError> {
@@ -75,11 +101,26 @@ impl Action for TakeAction {
     }
 }
 #[derive(Debug, Clone)]
-pub struct PromoteAction {
+pub(super) struct PromoteAction {
     was_piece: PieceType,
     pos: BoardPosition,
     become_piece: PieceType,
     piece_color: Color,
+}
+impl PromoteAction {
+    pub fn new(
+        was_piece: PieceType,
+        pos: BoardPosition,
+        become_piece: PieceType,
+        piece_color: Color,
+    ) -> Self {
+        Self {
+            was_piece,
+            pos,
+            become_piece,
+            piece_color,
+        }
+    }
 }
 impl Action for PromoteAction {
     fn execute(self, board: &mut InnerBoard) -> Result<(), BoardError> {
@@ -88,10 +129,11 @@ impl Action for PromoteAction {
     }
 }
 #[derive(Debug, Clone)]
-pub enum CastleAction {
+pub(super) enum CastleAction {
     Long(Color),
     Short(Color),
 }
+
 impl Action for CastleAction {
     fn execute(self, board: &mut InnerBoard) -> Result<(), BoardError> {
         match self {
@@ -117,10 +159,15 @@ impl Action for CastleAction {
     }
 }
 #[derive(Debug, Clone)]
-pub struct EnPassant {
+pub(super) struct EnPassant {
     from: BoardPosition,
     to: BoardPosition,
     // the pos can be calculated from where it was comming and where it was going, if we had acces to history we would not need any info funily enough
+}
+impl EnPassant {
+    pub fn new(from: BoardPosition, to: BoardPosition) -> Self {
+        Self { from, to }
+    }
 }
 impl Action for EnPassant {
     fn execute(self, board: &mut InnerBoard) -> Result<(), BoardError> {

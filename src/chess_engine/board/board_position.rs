@@ -1,6 +1,6 @@
 use std::{ops::Add, str::FromStr};
 
-use crate::chess_engine::{errors::BoardPositionError, Error};
+use crate::chess_engine::{errors::ParsingError, Error};
 
 use super::{File, MoveOffset, Rank};
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -31,14 +31,14 @@ impl Add<MoveOffset> for BoardPosition {
     }
 }
 impl FromStr for BoardPosition {
-    type Err = Error;
+    type Err = ParsingError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut chars = s.chars();
         if s.len() > 2 {
-            Err(BoardPositionError::CharOverflow)?;
+            Err(ParsingError::CharOverflow)?;
         }
         if s.len() < 2 {
-            Err(BoardPositionError::CharUnderflow)?; // ;)
+            Err(ParsingError::CharUnderflow)?; // ;)
         }
         Ok(BoardPosition {
             file: File::try_from(

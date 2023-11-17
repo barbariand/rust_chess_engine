@@ -1,3 +1,4 @@
+use std::iter::Step;
 pub mod tables {
     use crate::chess_engine::board::bitmap::BitMap64;
     use crate::chess_engine::pieces::Color;
@@ -16,17 +17,17 @@ pub mod tables {
     use innertable::queen_moves_bitmask as queen_movetable;
     use innertable::rook_moves_bitmask as rook_movetable;
     use innertable::white_pawn_moves as white_pawn_movetable;
-    pub struct MoveTable([(BitMap64, BitMap64); 64]);
+    struct MoveTable([(BitMap64, BitMap64); 64]);
     impl Deref for MoveTable {
         type Target = [(BitMap64, BitMap64); 64];
         fn deref(&self) -> &Self::Target {
             &self.0
         }
     }
-    pub struct MoveTables {
+    struct MoveTables {
         tables: [MoveTable; 7],
     }
-    static moving: MoveTables = MoveTables {
+    pub static MOVETABLES: MoveTables = MoveTables {
         tables: [
             MoveTable(white_pawn_movetable),
             MoveTable(black_pawn_movetable),
@@ -66,12 +67,51 @@ impl std::ops::Not for Color {
         }
     }
 }
-#[derive(Debug, Clone, PartialEq, Copy)]
+#[derive(Debug, Clone, PartialEq, Copy, PartialOrd)]
 pub enum PieceType {
-    Pawn = 0,
-    Rook = 1,
-    Knight = 2,
-    Bishop = 3,
-    King = 4,
     Queen = 5,
+    King = 4,
+    Bishop = 3,
+    Knight = 2,
+    Rook = 1,
+    Pawn = 0,
+}
+impl Step for PieceType {
+    fn steps_between(rhs: &Self, lhs: &Self) -> Option<usize> {
+        if (*rhs as usize) > (*lhs as usize) {
+            None
+        } else {
+            Some((*rhs as usize) - (*lhs as usize))
+        }
+    }
+
+    fn forward_checked(piece: Self, step: usize) -> Option<Self> {
+        let next_piece = (piece as usize) + step;
+        match next_piece {
+            0 => Some(PieceType::Pawn),
+            1 => Some(PieceType::Rook),
+            2 => Some(PieceType::Knight),
+            3 => Some(PieceType::Bishop),
+            4 => Some(PieceType::King),
+            5 => Some(PieceType::Queen),
+            _ => None, // No piece is higher than Queen
+        }
+    }
+
+    fn backward_checked(piece: Self, step: usize) -> Option<Self> {
+        if step > piece as usize {
+            None
+        } else {
+            let prev_piece = (piece as usize) - step;
+            match prev_piece {
+                0 => Some(PieceType::Pawn),
+                1 => Some(PieceType::Rook),
+                2 => Some(PieceType::Knight),
+                3 => Some(PieceType::Bishop),
+                4 => Some(PieceType::King),
+                5 => Some(PieceType::Queen),
+                _ => unreachable!(), // We already checked for underflow
+            }
+        }
+    }
 }

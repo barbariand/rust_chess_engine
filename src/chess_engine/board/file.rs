@@ -1,7 +1,9 @@
 use std::ops::{Add, Sub};
 
-use crate::chess_engine::{errors::BoardPositionError, Error};
-
+use crate::chess_engine::{
+    errors::{ExpectedOneOf, ParsingError},
+    Error,
+};
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum File {
     H,
@@ -14,19 +16,22 @@ pub enum File {
     A,
 }
 impl TryFrom<char> for File {
-    type Error = Error;
+    type Error = ParsingError;
     fn try_from(value: char) -> Result<Self, Self::Error> {
-        let file = value
-            .to_string()
-            .parse::<i8>()
-            .map_err(|_| BoardPositionError::NotAFile(value.to_string()))?;
+        let file = value.to_string().parse::<u8>().map_err(|_| {
+            ParsingError::NotAFile(ExpectedOneOf::new(
+                vec!['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'],
+                Some(value),
+                None,
+            ))
+        })?;
         Self::try_from(file)
     }
 }
 // can stil implement from_str and just ensure it is one long buut not needed
-impl TryFrom<i8> for File {
-    type Error = Error; // porob should have custom error here
-    fn try_from(value: i8) -> Result<Self, Self::Error> {
+impl TryFrom<u8> for File {
+    type Error = ParsingError; // porob should have custom error here
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
         Ok(match value {
             1 => Self::A,
             2 => Self::B,
@@ -36,16 +41,17 @@ impl TryFrom<i8> for File {
             6 => Self::F,
             7 => Self::G,
             8 => Self::H,
-            err => Err(BoardPositionError::NotAFile(format!(
-                "{} is not a valid file",
-                err
+            err => Err(ParsingError::NotAFile(ExpectedOneOf::new(
+                vec!['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'],
+                Some(value as char),
+                None,
             )))?,
         })
     }
 }
-impl Into<i8> for &File {
-    //only implementing into for it beacuse we need checks when from i8 -> File
-    fn into(self) -> i8 {
+impl Into<u8> for &File {
+    //only implementing into for it beacuse we need checks when from u8 -> File
+    fn into(self) -> u8 {
         match self {
             File::A => 1,
             File::B => 2,
@@ -58,40 +64,40 @@ impl Into<i8> for &File {
         }
     }
 }
-impl Into<i8> for File {
-    //only implementing into for it beacuse we need checks when from i8 -> File
-    fn into(self) -> i8 {
+impl Into<u8> for File {
+    //only implementing into for it beacuse we need checks when from u8 -> File
+    fn into(self) -> u8 {
         (&self).into()
     }
 }
 impl Add for File {
     // maybe do AddAssign to so you can use both + and +=
-    type Output = Result<File, Error>;
+    type Output = Result<File, ParsingError>;
     fn add(self, rhs: Self) -> Self::Output {
-        let lhsv: i8 = self.into();
-        let rhsv: i8 = rhs.into();
+        let lhsv: u8 = self.into();
+        let rhsv: u8 = rhs.into();
         (lhsv + rhsv).try_into()
     }
 }
 impl Sub for File {
-    type Output = Result<File, Error>;
+    type Output = Result<File, ParsingError>;
     fn sub(self, rhs: Self) -> Self::Output {
-        let lhsv: i8 = self.into();
-        let rhsv: i8 = rhs.into();
+        let lhsv: u8 = self.into();
+        let rhsv: u8 = rhs.into();
         (lhsv - rhsv).try_into()
     }
 }
-impl Add<i8> for File {
-    type Output = Result<File, Error>;
-    fn add(self, rhs: i8) -> Self::Output {
-        let lhsv: i8 = self.into();
+impl Add<u8> for File {
+    type Output = Result<File, ParsingError>;
+    fn add(self, rhs: u8) -> Self::Output {
+        let lhsv: u8 = self.into();
         (lhsv + rhs).try_into()
     }
 }
-impl Sub<i8> for File {
-    type Output = Result<File, Error>;
-    fn sub(self, rhs: i8) -> Self::Output {
-        let lhsv: i8 = self.into();
+impl Sub<u8> for File {
+    type Output = Result<File, ParsingError>;
+    fn sub(self, rhs: u8) -> Self::Output {
+        let lhsv: u8 = self.into();
         (lhsv - rhs).try_into()
     }
 }
