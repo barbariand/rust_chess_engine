@@ -1,27 +1,27 @@
-use dyn_clone::DynClone;
-
 use super::board::InnerBoard;
 use super::BoardPosition;
 use crate::chess_engine::errors::BoardError;
 use crate::chess_engine::pieces::Color;
 use crate::chess_engine::pieces::PieceType;
+use dyn_clone::DynClone;
 trait Action: std::fmt::Debug + DynClone {
     fn execute(self, board: &mut InnerBoard) -> Result<(), BoardError>;
 }
 pub(super) trait PreformAction {
-    fn preform(self, board: &mut InnerBoard) -> Result<(), BoardError>;
+    fn perform(self, board: &mut InnerBoard) -> Result<(), BoardError>;
 }
 impl<T> PreformAction for T
 where
     T: Action,
 {
-    fn preform(self, board: &mut InnerBoard) -> Result<(), BoardError> {
+    fn perform(self, board: &mut InnerBoard) -> Result<(), BoardError> {
         //println!("here i can do more stuff");
         self.execute(board)
     }
 }
 dyn_clone::clone_trait_object!(Action);
 #[derive(Debug, Clone)]
+#[allow(private_interfaces)] //actions should be viewable and exportable but not creatable by end user
 pub enum Actions {
     Move(MoveAction),
     Take(TakeAction, MoveAction),

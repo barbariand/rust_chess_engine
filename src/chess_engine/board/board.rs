@@ -6,6 +6,7 @@ use crate::chess_engine::board::actions::CastleAction;
 use crate::chess_engine::errors::*;
 use crate::chess_engine::history::History;
 use crate::chess_engine::pieces::tables;
+use crate::chess_engine::pieces::tables::MOVETABLES;
 use crate::chess_engine::pieces::Color;
 use crate::chess_engine::pieces::PieceType;
 use std::fmt::Display;
@@ -20,7 +21,7 @@ pub(super) struct InnerBoard {
 }
 impl InnerBoard {
     fn perform_actions(&mut self, actions: Actions) -> Result<(), BoardError> {
-        actions.preform(self)
+        actions.perform(self)
     }
 
     fn what_piece_on_square(&self, pos: &BoardPosition) -> Option<PieceType> {
@@ -89,13 +90,26 @@ impl InnerBoard {
             .flat_map(|pb| pb.get_movement_options(color))
             .collect()
     }
-    pub fn can_take(
+    pub fn is_takeable(
         &self,
+        taker_color: Color,
         taker: PieceType,
-        target: PieceType, //technicaly we dont need this but it is nice so we dont sort thrugh everyone lmao
         from: BoardPosition,
         to: BoardPosition,
     ) -> bool {
+        self.try_is_takeable(taker_color, taker, from, to).is_ok()
+    }
+    pub fn try_is_takeable(
+        &self,
+        taker_color: Color,
+        taker: PieceType,
+        from: BoardPosition,
+        to: BoardPosition,
+    ) -> Result<(), Error> {
+        let smth = MOVETABLES[(taker, taker_color)][from.to_num() as usize].1;
+        let can_move_to = smth & self.get_all_occupied_squares();
+        if taker == PieceType::Knight {}
+
         todo!()
     }
 }
@@ -368,9 +382,10 @@ fn remove_comments(input: &str) -> Result<String, ParsingError> {
 }
 /// parses a single string with no space acording to chess anotation
 fn action_parser(v: String, color: Color, board: &InnerBoard) -> Result<Actions, Error> {
-    let is_taking = v.contains('x');
+    let is_take = v.contains('x');
     if v == "e.p." {
-        todo!("enpassant")
+        todo!("enpassant");
+        //Actions::EnPassant(EnPassant::new(from, to));
     }
     if v == "O-O-O" {
         return Ok(Actions::Castle(CastleAction::Long(color)));
@@ -403,7 +418,7 @@ fn action_parser(v: String, color: Color, board: &InnerBoard) -> Result<Actions,
         }
         _ => PieceType::Pawn, // dont go past it as it will consume the invisible char that reprisents the pawn :(
     };
-    let maybe_unambigous_taking =
+    let next_char =
         chars
             .next()
             .ok_or(ParsingError::ExpectedOneOf(ExpectedOneOf::new(
@@ -414,8 +429,8 @@ fn action_parser(v: String, color: Color, board: &InnerBoard) -> Result<Actions,
                 None,
                 Some(v.to_string()),
             )))?;
-    let is_unambigous_taking = maybe_unambigous_taking == 'x';
-    Ok(match (is_taking, is_unambigous_taking) {
+    let is_unambigous_take = next_char == 'x';
+    Ok(match (is_take, is_unambigous_take) {
         (true, true) => {
             let next_pos = BoardPosition::from_str(&format!(
                 "{}{}",
@@ -438,7 +453,7 @@ fn action_parser(v: String, color: Color, board: &InnerBoard) -> Result<Actions,
             todo!()
         }
         (true, false) => {
-            let maybe_easy_ambigous_taking =
+            let next_next_char =
                 chars
                     .next()
                     .ok_or(ParsingError::ExpectedOneOf(ExpectedOneOf::new(
@@ -449,12 +464,12 @@ fn action_parser(v: String, color: Color, board: &InnerBoard) -> Result<Actions,
                         None,
                         Some(v.to_string()),
                     )))?;
-            if maybe_easy_ambigous_taking == 'x' {
+            if next_next_char == 'x' {
                 todo!("hard ambigous")
             }
             let from_pos = BoardPosition::from_str(&format!(
                 "{}{}",
-                maybe_unambigous_taking, maybe_easy_ambigous_taking
+                next_char, next_next_char
             ))?;
             chars
                 .next()
@@ -491,10 +506,12 @@ fn action_parser(v: String, color: Color, board: &InnerBoard) -> Result<Actions,
                 MoveAction::new(from_pos, to_pos, piecetype, color),
             )
         }
-        (false, e) => {
-            assert!(!e, "it is not takable but it is an ambigous taing?????");
+        (false, false) => {
             todo!()
             //it is not taking atleast, now we need to look into wheather it is ambigous or not
+        }
+        (false, true) => {
+            unreachable!("we checked that the input had no x but the iterator had an x as next position");
         }
     })
 }

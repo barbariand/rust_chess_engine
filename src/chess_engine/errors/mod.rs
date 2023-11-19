@@ -2,7 +2,7 @@ use std::{error::Error as StdError, fmt::Display};
 
 #[derive(Debug)]
 pub enum Error {
-    Parsning(ParsingError),
+    Parsing(ParsingError),
     Board(BoardError),
 }
 impl Display for Error {
@@ -22,7 +22,7 @@ pub enum ParsingError {
 }
 impl From<ParsingError> for Error {
     fn from(value: ParsingError) -> Self {
-        Error::Parsning(value)
+        Error::Parsing(value)
     }
 }
 impl Display for ParsingError {

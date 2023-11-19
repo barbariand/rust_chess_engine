@@ -17,14 +17,14 @@ pub mod tables {
     use innertable::queen_moves_bitmask as queen_movetable;
     use innertable::rook_moves_bitmask as rook_movetable;
     use innertable::white_pawn_moves as white_pawn_movetable;
-    struct MoveTable([(BitMap64, BitMap64); 64]);
+    pub struct MoveTable([(BitMap64, BitMap64); 64]);
     impl Deref for MoveTable {
         type Target = [(BitMap64, BitMap64); 64];
         fn deref(&self) -> &Self::Target {
             &self.0
         }
     }
-    struct MoveTables {
+    pub struct MoveTables {
         tables: [MoveTable; 7],
     }
     pub static MOVETABLES: MoveTables = MoveTables {
