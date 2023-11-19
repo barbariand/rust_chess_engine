@@ -106,11 +106,25 @@ impl InnerBoard {
         from: BoardPosition,
         to: BoardPosition,
     ) -> Result<(), Error> {
-        let smth = MOVETABLES[(taker, taker_color)][from.to_num() as usize].1;
-        let can_move_to = smth & self.get_all_occupied_squares();
-        if taker == PieceType::Knight {}
+        let take_board = MOVETABLES[(taker, taker_color)][from.to_num() as usize].1;
+        let can_move_to = take_board & self.get_all_occupied_squares();
+        if taker == PieceType::Knight {
+            return ((can_move_to & (BitMap64::default() << to.to_num())).get_copied_inner() > 0)
+                .then(|| ())
+                .ok_or(Error::Board(BoardError::PieceMissing));
+        }
 
         todo!()
+    }
+    //if this works then there is multiple pieces on one place i  think TODO here
+    pub fn validate(&self) -> bool {
+        self.iter()
+            .map(|v| v.get_occupied_squares())
+            .reduce(|acc, piece_board| (acc ^ piece_board))
+            .unwrap_or_default()
+            .get_copied_inner()
+            == 0;
+        todo!("this is wrongly implemented i think somehow idk")
     }
 }
 impl Default for InnerBoard {
@@ -347,8 +361,8 @@ impl Board {
         Ok(board)
     }
 
-    pub fn get_movement_options(&self) -> Vec<Actions> {
-        todo!()
+    pub fn get_movement_options(&self, color: Color) -> Vec<Actions> {
+        self.inner_board.get_movement_options(color)
     }
 }
 
@@ -418,17 +432,15 @@ fn action_parser(v: String, color: Color, board: &InnerBoard) -> Result<Actions,
         }
         _ => PieceType::Pawn, // dont go past it as it will consume the invisible char that reprisents the pawn :(
     };
-    let next_char =
-        chars
-            .next()
-            .ok_or(ParsingError::ExpectedOneOf(ExpectedOneOf::new(
-                vec![
-                    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', '1', '2', '3', '4', '5', '6', '7', '8',
-                    'x',
-                ],
-                None,
-                Some(v.to_string()),
-            )))?;
+    let next_char = chars
+        .next()
+        .ok_or(ParsingError::ExpectedOneOf(ExpectedOneOf::new(
+            vec![
+                'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', '1', '2', '3', '4', '5', '6', '7', '8', 'x',
+            ],
+            None,
+            Some(v.to_string()),
+        )))?;
     let is_unambigous_take = next_char == 'x';
     Ok(match (is_take, is_unambigous_take) {
         (true, true) => {
@@ -467,10 +479,7 @@ fn action_parser(v: String, color: Color, board: &InnerBoard) -> Result<Actions,
             if next_next_char == 'x' {
                 todo!("hard ambigous")
             }
-            let from_pos = BoardPosition::from_str(&format!(
-                "{}{}",
-                next_char, next_next_char
-            ))?;
+            let from_pos = BoardPosition::from_str(&format!("{}{}", next_char, next_next_char))?;
             chars
                 .next()
                 .ok_or(ParsingError::ExpectedOneOf(ExpectedOneOf::new(
@@ -511,7 +520,9 @@ fn action_parser(v: String, color: Color, board: &InnerBoard) -> Result<Actions,
             //it is not taking atleast, now we need to look into wheather it is ambigous or not
         }
         (false, true) => {
-            unreachable!("we checked that the input had no x but the iterator had an x as next position");
+            unreachable!(
+                "we checked that the input had no x but the iterator had an x as next position"
+            );
         }
     })
 }

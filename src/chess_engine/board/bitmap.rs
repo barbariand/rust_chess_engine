@@ -31,11 +31,14 @@ impl BitMap64 {
     pub fn count_ones(&self) -> u8 {
         self.0.count_ones() as u8
     }
+    pub fn get_copied_inner(&self) -> u64 {
+        self.0
+    }
 }
 impl Shr<u64> for BitMap64 {
     type Output = Self;
     fn shr(self, rhs: u64) -> Self::Output {
-        BitMap64(self.0 << rhs)
+        BitMap64(self.0 >> rhs)
     }
 }
 impl ShrAssign<u64> for BitMap64 {
@@ -45,13 +48,13 @@ impl ShrAssign<u64> for BitMap64 {
 }
 impl ShlAssign<u64> for BitMap64 {
     fn shl_assign(&mut self, rhs: u64) {
-        self.0 = self.0 >> rhs
+        self.0 = self.0 << rhs
     }
 }
 impl Shl<u64> for BitMap64 {
     type Output = Self;
     fn shl(self, rhs: u64) -> Self::Output {
-        BitMap64(self.0 >> rhs)
+        BitMap64(self.0 << rhs)
     }
 }
 impl BitAnd for BitMap64 {
