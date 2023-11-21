@@ -127,9 +127,32 @@ impl InnerBoard {
             .reduce(|acc, piece_board| (acc & piece_board))
             .unwrap_or_default()
             .get_copied_inner()
-            == 0;
-        todo!("this is wrongly implemented i think somehow idk")
             == 0
+    }
+}
+#[cfg(test)]
+mod InnerBoardTests {
+    use std::str::FromStr;
+
+    use super::*;
+
+    #[test]
+    fn creating_invalid() {
+        let inner_board = InnerBoard::new_inner_board([PieceBoard::new_bishop(); 6]);
+        assert!(!inner_board.validate());
+    }
+
+    #[test]
+    fn testing_move_action() {
+        let mut inner_board = InnerBoard::default();
+        println!("hello????");
+        let res = inner_board.perform_actions(Actions::Move(MoveAction::new(
+            BoardPosition::from_str("e2").expect("this is a normal move"),
+            BoardPosition::from_str("e4").expect("this is a normal move"),
+            PieceType::Pawn,
+            Color::White,
+        )));
+        assert!(res.is_ok(), "{}", res.unwrap_err())
     }
 }
 impl Default for InnerBoard {

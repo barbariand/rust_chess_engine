@@ -33,6 +33,7 @@ impl Add<MoveOffset> for BoardPosition {
 impl FromStr for BoardPosition {
     type Err = ParsingError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        println!("hello2????");
         let mut chars = s.chars();
         if s.len() > 2 {
             Err(ParsingError::CharOverflow)?;
@@ -40,6 +41,7 @@ impl FromStr for BoardPosition {
         if s.len() < 2 {
             Err(ParsingError::CharUnderflow)?; // ;)
         }
+        println!("hello3????");
         Ok(BoardPosition {
             file: File::try_from(
                 chars
