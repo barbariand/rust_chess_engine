@@ -1,5 +1,5 @@
 use std::ops::*;
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct BitMap64(u64);
 
 impl Default for BitMap64 {
@@ -7,6 +7,7 @@ impl Default for BitMap64 {
         Self(0)
     }
 }
+
 impl BitMap64 {
     pub const fn new(num: u64) -> BitMap64 {
         BitMap64(num)

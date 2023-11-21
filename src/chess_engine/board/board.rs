@@ -15,11 +15,14 @@ use std::ops::Index;
 use std::ops::IndexMut;
 use std::str::FromStr;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) struct InnerBoard {
     pieces: PieceBoards,
 }
 impl InnerBoard {
+    fn new_inner_board(pieces: PieceBoards) -> Self {
+        Self { pieces }
+    }
     fn perform_actions(&mut self, actions: Actions) -> Result<(), BoardError> {
         actions.perform(self)
     }
@@ -62,16 +65,16 @@ impl InnerBoard {
             .unwrap_or_default()
     }
 
-    fn has(&self, square: u64) -> bool {
-        self.get_all_occupied_squares().contains(square)
+    fn has(&self, square: &BoardPosition) -> bool {
+        self.get_all_occupied_squares().contains(square.to_num())
     }
 
-    fn has_white_piece(&self, square: u64) -> bool {
-        self.get_all_white_squares().contains(square)
+    fn has_white_piece(&self, square: &BoardPosition) -> bool {
+        self.get_all_white_squares().contains(square.to_num())
     }
 
-    fn has_black_piece(&self, square: u64) -> bool {
-        self.get_all_black_squares().contains(square)
+    fn has_black_piece(&self, square: &BoardPosition) -> bool {
+        self.get_all_black_squares().contains(square.to_num())
     }
 
     fn count_all_pieces(&self) -> u8 {
@@ -118,13 +121,15 @@ impl InnerBoard {
     }
     //if this works then there is multiple pieces on one place i  think TODO here
     pub fn validate(&self) -> bool {
+        let all = self.get_all_occupied_squares();
         self.iter()
-            .map(|v| v.get_occupied_squares())
-            .reduce(|acc, piece_board| (acc ^ piece_board))
+            .map(|v| all ^ v.get_occupied_squares())
+            .reduce(|acc, piece_board| (acc & piece_board))
             .unwrap_or_default()
             .get_copied_inner()
             == 0;
         todo!("this is wrongly implemented i think somehow idk")
+            == 0
     }
 }
 impl Default for InnerBoard {
@@ -163,7 +168,7 @@ impl Deref for InnerBoard {
 }
 type PieceBoards = [PieceBoard; 6];
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PieceBoard {
     white_piece: BitMap64,
     black_piece: BitMap64,
@@ -363,6 +368,12 @@ impl Board {
 
     pub fn get_movement_options(&self, color: Color) -> Vec<Actions> {
         self.inner_board.get_movement_options(color)
+    }
+    pub fn validate_current_board(&self) -> bool {
+        self.inner_board.validate()
+    }
+    pub fn validate_history(&self) -> bool {
+        todo!()
     }
 }
 

@@ -18,14 +18,21 @@ pub enum File {
 impl TryFrom<char> for File {
     type Error = ParsingError;
     fn try_from(value: char) -> Result<Self, Self::Error> {
-        let file = value.to_string().parse::<u8>().map_err(|_| {
-            ParsingError::NotAFile(ExpectedOneOf::new(
+        Ok(match value {
+            'a' => Self::A,
+            'b' => Self::B,
+            'c' => Self::C,
+            'd' => Self::D,
+            'e' => Self::E,
+            'f' => Self::F,
+            'g' => Self::G,
+            'h' => Self::H,
+            err => Err(ParsingError::NotAFile(ExpectedOneOf::new(
                 vec!['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'],
-                Some(value),
+                Some(value as char),
                 None,
-            ))
-        })?;
-        Self::try_from(file)
+            )))?,
+        })
     }
 }
 // can stil implement from_str and just ensure it is one long buut not needed
