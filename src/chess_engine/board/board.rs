@@ -129,7 +129,6 @@ impl InnerBoard {
             .get_copied_inner()
             == 0;
         todo!("this is wrongly implemented i think somehow idk")
-            == 0
     }
 }
 impl Default for InnerBoard {
