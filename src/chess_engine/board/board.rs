@@ -5,7 +5,6 @@ use super::BoardPosition;
 use crate::chess_engine::board::actions::CastleAction;
 use crate::chess_engine::errors::*;
 use crate::chess_engine::history::History;
-use crate::chess_engine::pieces::tables;
 use crate::chess_engine::pieces::tables::MOVETABLES;
 use crate::chess_engine::pieces::Color;
 use crate::chess_engine::pieces::PieceType;
@@ -143,7 +142,7 @@ mod InnerBoardTests {
     }
 
     #[test]
-    fn testing_move_action() {
+    pub fn testing_move_action() {
         let mut inner_board = InnerBoard::default();
         println!("hello????");
         let res = inner_board.perform_actions(Actions::Move(MoveAction::new(
@@ -152,6 +151,7 @@ mod InnerBoardTests {
             PieceType::Pawn,
             Color::White,
         )));
+
         assert!(res.is_ok(), "{}", res.unwrap_err())
     }
 }

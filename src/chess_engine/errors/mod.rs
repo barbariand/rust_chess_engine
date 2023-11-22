@@ -84,6 +84,15 @@ impl From<BoardError> for Error {
 }
 impl Display for BoardError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!()
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::PieceMissing => "Piece is missing",
+                Self::PieceNotInPlay => "Piece not in play",
+                Self::PieceWhereMoving => "Unexpected Piece where moving to",
+                Self::SameColor => "Trying to take piece with same color",
+            }
+        )
     }
 }
