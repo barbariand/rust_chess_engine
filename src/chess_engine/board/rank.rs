@@ -2,7 +2,6 @@ use std::ops::{Add, Sub};
 
 use crate::chess_engine::{
     errors::{ExpectedOneOf, ParsingError},
-    Error,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
@@ -29,10 +28,10 @@ impl TryFrom<char> for Rank {
         Self::try_from(rank)
     }
 }
-impl Into<u8> for &Rank {
+impl From<&Rank> for u8 {
     //only implementing into for it beacuse we need checks when from u8 -> File
-    fn into(self) -> u8 {
-        match self {
+    fn from(val: &Rank) -> Self {
+        match val {
             Rank::One => 1,
             Rank::Two => 2,
             Rank::Three => 3,
@@ -44,10 +43,10 @@ impl Into<u8> for &Rank {
         }
     }
 }
-impl Into<u8> for Rank {
+impl From<Rank> for u8 {
     //only implementing into for it beacuse we need checks when from u8 -> File
-    fn into(self) -> u8 {
-        (&self).into()
+    fn from(val: Rank) -> Self {
+        (&val).into()
     }
 }
 impl TryFrom<u8> for Rank {
@@ -62,7 +61,7 @@ impl TryFrom<u8> for Rank {
             6 => Self::Six,
             7 => Self::Seven,
             8 => Self::Eight,
-            err => Err(ParsingError::NotARank(ExpectedOneOf::new(
+            _err => Err(ParsingError::NotARank(ExpectedOneOf::new(
                 vec!['1', '2', '3', '4', '5', '6', '7', '8'],
                 Some(value as char),
                 None,

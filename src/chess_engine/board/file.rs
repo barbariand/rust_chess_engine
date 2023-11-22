@@ -2,7 +2,6 @@ use std::ops::{Add, Sub};
 
 use crate::chess_engine::{
     errors::{ExpectedOneOf, ParsingError},
-    Error,
 };
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum File {
@@ -27,9 +26,9 @@ impl TryFrom<char> for File {
             'f' => Self::F,
             'g' => Self::G,
             'h' => Self::H,
-            err => Err(ParsingError::NotAFile(ExpectedOneOf::new(
+            _err => Err(ParsingError::NotAFile(ExpectedOneOf::new(
                 vec!['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'],
-                Some(value as char),
+                Some(value),
                 None,
             )))?,
         })
@@ -48,7 +47,7 @@ impl TryFrom<u8> for File {
             6 => Self::F,
             7 => Self::G,
             8 => Self::H,
-            err => Err(ParsingError::NotAFile(ExpectedOneOf::new(
+            _err => Err(ParsingError::NotAFile(ExpectedOneOf::new(
                 vec!['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'],
                 Some(value as char),
                 None,
@@ -56,10 +55,10 @@ impl TryFrom<u8> for File {
         })
     }
 }
-impl Into<u8> for &File {
+impl From<&File> for u8 {
     //only implementing into for it beacuse we need checks when from u8 -> File
-    fn into(self) -> u8 {
-        match self {
+    fn from(val: &File) -> Self {
+        match val {
             File::A => 1,
             File::B => 2,
             File::C => 3,
@@ -71,10 +70,10 @@ impl Into<u8> for &File {
         }
     }
 }
-impl Into<u8> for File {
+impl From<File> for u8 {
     //only implementing into for it beacuse we need checks when from u8 -> File
-    fn into(self) -> u8 {
-        (&self).into()
+    fn from(val: File) -> Self {
+        (&val).into()
     }
 }
 impl Add for File {

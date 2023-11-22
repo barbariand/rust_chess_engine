@@ -170,7 +170,7 @@ impl EnPassant {
     }
 }
 impl Action for EnPassant {
-    fn execute(self, board: &mut InnerBoard) -> Result<(), BoardError> {
+    fn execute(self, _board: &mut InnerBoard) -> Result<(), BoardError> {
         todo!()
     }
 }

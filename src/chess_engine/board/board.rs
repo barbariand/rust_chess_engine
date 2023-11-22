@@ -59,7 +59,7 @@ impl InnerBoard {
 
     fn get_all_squares(&self, func: impl Fn(&PieceBoard) -> BitMap64) -> BitMap64 {
         self.iter()
-            .map(|v| func(&v))
+            .map(func)
             .reduce(|acc, piece_board| (acc | piece_board))
             .unwrap_or_default()
     }
@@ -112,7 +112,7 @@ impl InnerBoard {
         let can_move_to = take_board & self.get_all_occupied_squares();
         if taker == PieceType::Knight {
             return ((can_move_to & (BitMap64::default() << to.to_num())).get_copied_inner() > 0)
-                .then(|| ())
+                .then_some(())
                 .ok_or(Error::Board(BoardError::PieceMissing));
         }
 
@@ -171,7 +171,7 @@ impl Default for InnerBoard {
 impl Index<PieceType> for InnerBoard {
     type Output = PieceBoard;
     fn index(&self, index: PieceType) -> &Self::Output {
-        &self
+        self
             .get(index as usize)
             .expect("The PieceType number bounds should never be violated, check the enum values")
     }
@@ -332,7 +332,7 @@ impl PieceBoard {
     fn new_queen() -> PieceBoard {
         PieceBoard::new_custom(0b1 << 59, 0b1 << 4)
     }
-    pub fn get_movement_options(&self, color: Color) -> Vec<Actions> {
+    pub fn get_movement_options(&self, _color: Color) -> Vec<Actions> {
         todo!()
     }
 }
@@ -343,6 +343,12 @@ pub struct Board {
     turn: Color,
     history: History,
 }
+impl Default for Board {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Board {
     pub fn has_piece(&self, pos: &BoardPosition) -> bool {
         self.inner_board
@@ -370,13 +376,13 @@ impl Board {
     pub fn try_from_algebraic_chess_notation(input: &str) -> Result<Self, Error> {
         let input = remove_comments(input)?;
         let mut state = Color::White;
-        let mut turns = input.split_whitespace().map(|segment| {
-            let innerstate = state.clone();
+        let turns = input.split_whitespace().map(|segment| {
+            let innerstate = state;
             state = !state;
             (
                 segment
                     .chars()
-                    .skip_while(|c| c.is_digit(10) || *c == '.')
+                    .skip_while(|c| c.is_ascii_digit() || *c == '.')
                     .collect::<String>(),
                 innerstate,
             )
@@ -401,7 +407,7 @@ impl Board {
 }
 
 impl Display for Board {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         Ok(())
     }
 }
@@ -478,7 +484,7 @@ fn action_parser(v: String, color: Color, board: &InnerBoard) -> Result<Actions,
     let is_unambigous_take = next_char == 'x';
     Ok(match (is_take, is_unambigous_take) {
         (true, true) => {
-            let next_pos = BoardPosition::from_str(&format!(
+            let _next_pos = BoardPosition::from_str(&format!(
                 "{}{}",
                 chars
                     .next()

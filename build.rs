@@ -61,7 +61,7 @@ fn main() {
     let out_dir = env::var_os("OUT_DIR").unwrap();
     println!("{}", generated_str);
     let dest_path = Path::new(&out_dir).join("movetables.rs");
-    fs::write(&dest_path, generated_str).unwrap();
+    fs::write(dest_path, generated_str).unwrap();
     println!("cargo:rerun-if-changed=build.rs");
 }
 fn king_moves_bitmask(pos: u8) -> u64 {

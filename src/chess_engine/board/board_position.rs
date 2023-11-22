@@ -14,12 +14,12 @@ impl BoardPosition {
         BoardPosition { file, rank }
     }
     pub fn to_num(&self) -> u64 {
-        self.rank as u64 * 8 as u64 + self.file as u64
+        self.rank as u64 * 8_u64 + self.file as u64
     }
 }
-impl Into<u64> for &BoardPosition {
-    fn into(self) -> u64 {
-        self.rank as u64 * 8 as u64 + self.file as u64
+impl From<&BoardPosition> for u64 {
+    fn from(val: &BoardPosition) -> Self {
+        val.rank as u64 * 8_u64 + val.file as u64
     }
 }
 impl Add<MoveOffset> for BoardPosition {

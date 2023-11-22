@@ -5,7 +5,7 @@ pub mod tables {
     use crate::chess_engine::pieces::PieceType;
     use std::ops::Deref;
     use std::ops::Index;
-    use std::ops::IndexMut;
+    
     mod innertable {
         use crate::chess_engine::board::bitmap::BitMap64;
         include!(concat!(env!("OUT_DIR"), "/movetables.rs"));
